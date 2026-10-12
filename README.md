@@ -1,4 +1,15 @@
-# 학교운영위원회 구성 도우미 (경기 공립 초등 기준)
+# 학교운영위원회 도우미 모음
+
+| 프로그램 | 언제 | 바로 쓰기 |
+|---|---|---|
+| **학운위 구성 도우미** | 매년 2~4월(위원 선출·구성) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/ |
+| **학운위 운영업무 도우미** | 연중(회의 개최·진행·결과) | https://wonwongemini-ctrl.github.io/my-calculators/schoolboard.html |
+
+두 프로그램은 같은 브라우저에서 함께 써도 입력값이 섞이지 않습니다.
+
+---
+
+# 학운위 구성 도우미 (경기 공립 초등 기준)
 
 매해 반복되는 학교운영위원회 **구성 업무**(구성계획 → 선출 홍보 → 선출관리위원회 → 선출공고 → 후보 등록 → 결격사유 조회 → 명부·선거공보 → 투·개표/무투표 당선 → 지역위원 선출 → 위원장 선출 → 구성결과 홍보)의 기안문과 별지 서식을 일정만 넣으면 한 번에 만들어 주는 프로그램입니다.
 
@@ -28,4 +39,6 @@
 - [`hakwoonwi/sample_voter_roll_dummy.xlsx`](hakwoonwi/sample_voter_roll_dummy.xlsx): 시연용 **가상** 선거인 명부 100명(유명인 이름을 빌린 가상 인물, 가짜 연락처). 실제 인물·가족과 관계없습니다.
 
 ## 만든이
-- 블로그: https://blog.naver.com/oderobong/224438738839 (오류 제보·의견은 블로그 댓글로)
+- 구성 도우미 블로그: https://blog.naver.com/oderobong/224438738839
+- 운영업무 도우미 블로그: https://blog.naver.com/oderobong/224428377136
+- 오류 제보·의견은 블로그 댓글로 남겨 주세요.
