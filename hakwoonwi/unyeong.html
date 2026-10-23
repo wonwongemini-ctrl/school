@@ -606,6 +606,17 @@ dialog.choose p{margin:0 0 8px}
 .coach .nx{height:30px;padding:0 14px;border-radius:6px;border:0;background:#fff;color:#1d3b6e;font-weight:700;font-size:13px;cursor:pointer}
 /* 긴 설명 접기 */
 .hint .more{border:0;background:none;padding:0;margin-left:2px;color:var(--hl-deep);font-size:inherit;text-decoration:underline dotted;cursor:pointer}
+
+/* 파일 없이 입력 (v2.3.0) */
+.iktyped{display:flex;gap:6px;align-items:center;margin:10px 0 0;padding:10px 12px;border:1px dashed #b9c6d8;border-radius:10px;background:#f7f9fc}
+.iktyped b{white-space:nowrap;font-size:13.5px}
+.iktyped #ikTTitle{flex:1;min-width:0}
+.iktyped .inp.s{width:90px}
+.badge.b-typed{background:#eef1f5;color:#556}
+table.ag tr.flash td{animation:ikFlash 3s ease-out}
+@keyframes ikFlash{0%,40%{background:#fff3c4}100%{background:transparent}}
+@media (max-width:760px){.iktyped{flex-wrap:wrap}.iktyped #ikTTitle{flex:1 1 100%}}
+@media (prefers-reduced-motion:reduce){table.ag tr.flash td{animation:none;background:#fffbe8}}
 </style>
 </head>
 <body>
@@ -986,8 +997,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.2.0", date:"2026-10-16"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.3.0", date:"2026-10-23"};
 const CHANGELOG = [
+  {v:"2.3.0", date:"2026-10-23", items:[
+    "안건 접수: 안건 파일 없이 안건명·제안자만 넣어도 접수(엑셀·한글 표에서 여러 줄 복사해 붙여 넣기 가능). 파일은 나중에 그 줄의 [+ 파일 등록]으로",
+    "파일 없는 안건은 공문·공고문·안건 표지·목록에 들어가고, 안건집에는 표지·목록만 들어감"
+  ]},
   {v:"2.2.0", date:"2026-10-16", items:[
     "처음 화면을 '지금 할 일' 카드 하나로: 진행 상황에 따라 다음 할 일과 단추가 바뀜",
     "왼쪽 메뉴에서 다음 할 메뉴가 천천히 깜빡임(누르면 멈춤), 끝낸 메뉴는 ✓",
@@ -2744,6 +2759,23 @@ function newIntakeItem(rec, fileName, info, late){
   return {id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), fileName, title, pos:st.pos || posOf(name) || (name?"교사":""), name,
     kind:guessKind(title), fee:guessFee(title), submitDate:info.submitDate||"", recvDate:ymd(new Date()), landscape:!!info.landscape, att:[], st: late ? "pending" : ""};
 }
+/* 파일 없이 안건명·제안자만 입력: 한 줄 = 안건 하나. 엑셀·한글 표에서 복사한 줄은 칸(탭)으로 나눈다
+   [안건명] / [안건명, "직위 성명"] / [안건명, 직위, 성명]. 파일은 나중에 그 줄의 [+ 파일 등록]으로 */
+function addTypedItems(rec, lines, late, staff1){
+  const added = [];
+  lines.forEach(line => {
+    const c = String(line).split("\t").map(x => x.trim());
+    const title = (c[0]||"").replace(/^\s*\d+[.)]\s*/, "").trim(); if(!title) return;
+    const staff = c.length >= 3 ? `${c[1]} ${c[2]}` : c.length === 2 ? c[1] : (staff1 || "");
+    const it = newIntakeItem(rec, "", {title, staff}, late); it.typed = true;
+    rec.items.push(it); if(late) onLateItem(rec, it); added.push(it);
+  });
+  if(!added.length) return 0;
+  IK.flash = added.map(it => it.id);
+  putIntake(rec); renderIntake(S.view);
+  toast(`안건 ${added.length}건을 넣었습니다. 안건 파일은 나중에 그 줄의 [+ 파일 등록]으로 넣으세요`);
+  return added.length;
+}
 async function intakeFiles(fileList, mode, opts = {}){
   const rec = curIntake(); if(!rec){ toast("먼저 회의를 만드세요"); return; }
   const late = mode==="late";
@@ -2826,7 +2858,11 @@ async function buildAgendaBook(rec, entries, o){
     parts.push({data:f.data, no:e.no, pageStart: parts.filter(p=>!p.cover).length===0 ? 1 : 0, label:e.no});
     e.it.att.filter(a => a.ext==="hwpx" && S.files[a.fileName]).forEach(a => parts.push({data:S.files[a.fileName].data, label:`${e.no} 붙임`}));
   });
-  if(!parts.some(p=>!p.cover)) throw new Error("안건 파일이 없습니다. 안건 파일(.hwpx)을 올려 주세요");
+  if(!parts.some(p=>!p.cover)){
+    // 직접 입력한 안건(파일 없음)만 있으면 표지·목록만 담는다. 파일을 넣은 뒤 다시 만들면 안건이 들어간다
+    if(parts.length) return {blob:parts[0].data, warns:[], missing, coverOnly:true};
+    throw new Error("안건 파일이 없습니다. 안건 파일(.hwpx)을 올려 주세요");
+  }
   const r = await mergeHwpx(parts, {title:o.head});
   return {...r, missing};
 }
@@ -2850,7 +2886,7 @@ async function finalIntake(late){
     const z = new JSZip(), warns = [...book.warns];
     const base = `제${rec.gi}기_제${rec.hoe}회`;
     z.file(`${late?"추가안건집":"안건집"}_${base}_${range}.hwpx`, book.blob);
-    const pub = entries.filter(e => e.it.fee || e.it.kind==="규정개정");
+    const pub = entries.filter(e => (e.it.fee || e.it.kind==="규정개정") && S.files[e.it.fileName]);
     if(pub.length){
       const pb = await buildAgendaBook(rec, pub, {cover:false, head:"홈페이지 게시용 안건"});
       z.file(`홈페이지게시용_안건_${base}_${pub.map(e=>e.no).join(",")}.hwpx`, pb.blob); warns.push(...pb.warns);
@@ -2865,8 +2901,9 @@ async function finalIntake(late){
     putIntake(rec);
     if(S.mt){ S.mt.gen[late?"lateZip:late":"intakeZip:intake"] = true; saveMeetState(); }
     selectMeeting(rec.key);
-    toast(`안건집 묶음을 내려받았습니다${book.missing.length?` (파일이 없는 안건 ${book.missing.length}건 빠짐)`:""}${warns.length?` · 확인: ${warns.join(" / ")}`:""}`);
-    IK.lastWarn = [...warns, ...book.missing.map(n=>`${n}: 안건 파일을 ${/안건 파일 없음/.test(n)?"넣어야":"다시 올려야"} 안건집에 들어갑니다(표지·목록에는 들어감)`)];
+    if(book.coverOnly) toast("안건 파일이 없어 안건집에는 표지·목록만 들어 있습니다. 줄마다 [+ 파일 등록]으로 파일을 넣은 뒤 다시 만들면 안건이 들어갑니다");
+    else toast(`안건집 묶음을 내려받았습니다${book.missing.length?` (파일이 없는 안건 ${book.missing.length}건 빠짐)`:""}${warns.length?` · 확인: ${warns.join(" / ")}`:""}`);
+    IK.lastWarn = [...warns, ...book.missing.filter(n => rec.fromLedger || !/안건 파일 없음/.test(n)).map(n=>`${n}: 안건 파일을 ${/안건 파일 없음/.test(n)?"넣어야":"다시 올려야"} 안건집에 들어갑니다(표지·목록에는 들어감)`)];
   }catch(e){ console.error(e); toast(`안건집을 만들지 못했습니다: ${e.message}`); }
   finally{ renderIntake(S.view); }
 }
@@ -2874,11 +2911,11 @@ async function previewBook(late){
   const rec = curIntake(); if(!rec) return;
   const pick = rec.items.map((it,i)=>({it, i})).filter(x => late ? (x.it.st && !x.it.wd && !x.it.done) : (!x.it.st && !x.it.wd));
   const box = $("ikPreview");
-  if(!pick.some(x => S.files[x.it.fileName])){ box.innerHTML = `<p class="pvinfo" style="color:var(--warn)">안건 파일이 없습니다. ${rec.fromLedger ? "안건 목록의 줄마다 [+ 파일 등록]으로 한글 안건 파일(.hwpx)을 넣어 주세요." : "안건 파일(.hwpx)을 올려 주세요."}</p>`; return; } box.innerHTML = `<p class="pvinfo">미리보기를 만드는 중…</p>`;
+  if(!pick.length || (rec.fromLedger && !pick.some(x => S.files[x.it.fileName]))){ box.innerHTML = `<p class="pvinfo" style="color:var(--warn)">안건 파일이 없습니다. ${rec.fromLedger ? "안건 목록의 줄마다 [+ 파일 등록]으로 한글 안건 파일(.hwpx)을 넣어 주세요." : "안건 파일(.hwpx)을 올려 주세요."}</p>`; return; } box.innerHTML = `<p class="pvinfo">미리보기를 만드는 중…</p>`;
   try{
     const book = await buildAgendaBook(rec, pick.map(x=>({it:x.it, no:itemNo(rec, x.i)})), {cover:true, head: late ? "추가 안건" : "심의안건", letter: late ? (pick.some(x=>x.it.st==="urgent") ? "urgent" : pick.every(x=>x.it.st==="mod") ? "mod" : "add") : ""});
     const html = await ENG.previewHwpx(book.blob);
-    box.innerHTML = `<p class="pvinfo">실제 내려받을 안건집을 읽어 그린 화면 · ${(book.blob.size/1024).toFixed(0)}KB · 원래 서식(그림·글상자 등)은 한글에서 정확히 보입니다${book.warns.length?` · <b style="color:var(--warn)">${esc(book.warns.join(" / "))}</b>`:""}</p><div class="rp">${html}</div>`;
+    box.innerHTML = `<p class="pvinfo">${book.coverOnly ? "<b>안건 파일이 없어 표지·목록만 보입니다.</b> " : ""}실제 내려받을 안건집을 읽어 그린 화면 · ${(book.blob.size/1024).toFixed(0)}KB · 원래 서식(그림·글상자 등)은 한글에서 정확히 보입니다${book.warns.length?` · <b style="color:var(--warn)">${esc(book.warns.join(" / "))}</b>`:""}</p><div class="rp">${html}</div>`;
     ENG.fitSqueeze(box);
     const rp = box.querySelector(".rp"), pw = rp.firstElementChild ? rp.firstElementChild.getBoundingClientRect().width : 800;
     if(pw > box.clientWidth - 30) rp.style.zoom = ((box.clientWidth-30)/pw).toFixed(3);
@@ -2990,11 +3027,13 @@ function renderIntake(view){
     // 줄 빼기(×)는 맨 오른쪽 칸 가운데: 모든 줄(잘못 넣은 줄·시험한 줄). 안건을 거두어들이는 것은 [철회]
     const delBtn = late ? `<button type="button" class="x" data-act="del" aria-label="안건 빼기" title="목록에서 빼기(잘못 넣은 줄·시험한 줄)">×</button>` : "";
     const ledg = rec.fromLedger && !it.st;   // 대장 안건: 안건명 아래에 '대장' 표시 + 파일 등록
+    const typed = !ledg && (it.typed || !it.fileName) && it.st!=="mod";   // 직접 입력한 안건: 파일은 나중에
     const sub = ledg ? `<span class="badge b-ok">대장</span> ${it.fileName ? esc(it.fileName) : `<span class="nw">파일 없음</span>`}`
+      : typed && !it.fileName ? `<span class="badge b-typed">직접 입력</span> <span class="nw">파일 없음</span>`
       : it.fileName ? esc(it.fileName) : "";
-    const fileBtn = ledg && !it.wd ? `<button type="button" class="minibtn fbtn ${it.fileName?"":"hl"}" data-act="setfile" title="이 대장 안건의 한글 안건 파일(.hwpx)을 넣으면 안건집을 만들 수 있습니다">${it.fileName ? "파일 바꾸기" : "+ 파일 등록"}</button>` : "";
+    const fileBtn = (ledg || typed) && !it.wd ? `<button type="button" class="minibtn fbtn ${it.fileName?"":"hl"}" data-act="setfile" title="${it.fileName ? "다른 한글 안건 파일(.hwpx)로 바꿉니다" : ledg ? "이 대장 안건의 한글 안건 파일(.hwpx)을 넣으면 안건집을 만들 수 있습니다" : "지금은 제목만 들어가 있습니다. 한글 안건 파일(.hwpx)을 넣으면 안건집 본문에도 들어갑니다."}">${it.fileName ? "파일 바꾸기" : "+ 파일 등록"}</button>` : "";
     const wdRow = IK.wdOpen===it.id ? `<tr class="wdrow"><td></td><td colspan="10"><div class="row-btns" style="margin:0"><b>철회</b><input class="inp" id="wdReason" placeholder="철회 사유 (예: 안건 준비 미비 및 추가 검토 필요)" style="flex:1"><input type="date" class="inp d" id="wdDate" value="${ymd(new Date())}"><button type="button" class="btn sm" id="wdOk">철회로 표시</button><button type="button" class="btn ghost sm" id="wdNo">닫기</button></div><p class="small" style="margin:4px 0 0">소집 공고 뒤의 철회는 원칙상 어렵고, 심의할 안건이 없어진 경우 등에만 예외로 합니다. 이미 의제가 된 안건은 운영위원회의 동의가 필요합니다(회의운영규칙 예시 제10조).</p></td></tr>` : "";
-    return `<tr data-id="${it.id}" class="${it.wd?"wd":""}${it.st==="mod"?" mod":""}" title="${it.wd?`철회: ${esc(it.wd.reason||"")}`:""}">
+    return `<tr data-id="${it.id}" class="${it.wd?"wd":""}${it.st==="mod"?" mod":""}${(IK.flash||[]).includes(it.id)?" flash":""}" title="${it.wd?`철회: ${esc(it.wd.reason||"")}`:""}">
 <td class="mv">${late ? "" : `<button type="button" class="mvb" data-act="up" aria-label="위로">▲</button><button type="button" class="mvb" data-act="dn" aria-label="아래로">▼</button>`}</td>
 <td class="no">${no}</td>
 <td><input class="inp" data-f="title" value="${esc(it.title)}" aria-label="안건명"><div class="small tsub"><span>${sub}${it.landscape?" · <b>가로 용지</b>":""}${it.submitDate?` · 제출 ${esc(fMD(parseYmd(it.submitDate)))}`:""}${it.wd&&it.wd.reason?` · 철회 사유: ${esc(it.wd.reason)}`:""}</span>${fileBtn}</div></td>
@@ -3008,6 +3047,7 @@ ${late ? `<td class="kc">${kindCell}<div class="acts">${acts}</div></td>` : ""}
 ${late ? `<td class="delc">${delBtn}</td>` : `<td class="nw">${acts}</td>`}</tr>${wdRow}`;
   };
   const fin = rec.final;
+  const noFile = firstRows.filter(x => !x.it.wd && !S.files[x.it.fileName]).length;
   const flow = late ? "" : `<div class="flow">
 <div class="fl ${firstRows.length?"done":""}"><div class="k">① 안건 파일 올리기</div><div class="t">안건 ${firstRows.length}건 · 붙임 ${firstRows.reduce((a,x)=>a+x.it.att.length,0)}개</div><span class="who">간사</span></div>
 <div class="fl cur"><div class="k">② 유형 확인·순서·최종 접수</div><div class="t">${firstRows.length?`${itemNo(rec,firstRows[0].i)} ~ ${itemNo(rec,firstRows[firstRows.length-1].i)}`:"-"}</div><span class="small">안건집 zip 내려받기</span></div>
@@ -3019,6 +3059,7 @@ ${late ? `<td class="delc">${delBtn}</td>` : `<td class="nw">${acts}</td>`}</tr>
   <label class="drop" id="ikDrop" tabindex="0"><input type="file" id="ikFile" accept=".hwpx,.hwp,.pdf,.xlsx,.xls,.jpg,.jpeg,.png" multiple hidden>
     <strong>${late?"새로 들어온 안건 파일과 붙임을 끌어다 놓기 (추가·긴급 제출)":"안건 파일(.hwpx)과 붙임(.pdf, .hwpx)을 한꺼번에 끌어다 놓기"}</strong>
     <small>${late?"접수일로 추가·긴급 제출을 판단합니다(고친 파일은 그 줄의 [수정 제출]) · ":""}.hwp도 됩니다(처음 한 번 인터넷 필요) · 붙임은 이름 앞부분이 같으면 자동 짝</small></label>
+  <div class="iktyped" id="ikTyped"><b>파일 없이 입력${late?" <span class=\"small\">(추가·긴급 제출)</span>":""}</b><input class="inp" id="ikTTitle" placeholder="안건명 (여러 줄은 엑셀·한글 표에서 복사해 붙여 넣기)" aria-label="안건명"><input class="inp s" id="ikTPos" placeholder="직위" aria-label="직위" list="ikPosList"><input class="inp s" id="ikTName" placeholder="성명" aria-label="성명"><button type="button" class="btn sm" id="ikTAdd">+ 추가</button></div>
   <datalist id="ikPosList">${POS_LIST.map(p=>`<option value="${p}">`).join("")}</datalist>
   <input type="file" id="ikModFile" accept=".hwpx,.hwp,.pdf" multiple hidden>
   <input type="file" id="ikSetFile" accept=".hwpx,.hwp" hidden>
@@ -3029,7 +3070,7 @@ ${late ? `<td class="delc">${delBtn}</td>` : `<td class="nw">${acts}</td>`}</tr>
 ${late ? lateIntro(rec, cut) : ""}
 <div class="card">
   <h3>안건 목록 <span class="small">${late ? "줄마다 [수정 제출]·[철회]를 누를 수 있습니다" : "위아래로 순서를 바꾸면 안건번호가 다시 매겨집니다"}</span></h3>
-  ${rows.length ? `<div class="tblwrap"><table class="ag"><thead><tr><th></th><th>안건번호</th><th>안건명</th><th>제안자 (직위·성명)</th><th>안건 유형</th><th>부담경비</th><th>접수일</th>${late?"<th>수정·철회</th>":""}<th>붙임</th><th>확인</th><th></th></tr></thead><tbody>${rows.map(row).join("")}</tbody></table></div>` : emptyBox(`<p class="hint" style="margin:0">아직 올린 안건이 없습니다. 위에 안건 파일(.hwpx)과 붙임을 끌어다 놓으세요.</p>`)}
+  ${rows.length ? `<div class="tblwrap"><table class="ag"><thead><tr><th></th><th>안건번호</th><th>안건명</th><th>제안자 (직위·성명)</th><th>안건 유형</th><th>부담경비</th><th>접수일</th>${late?"<th>수정·철회</th>":""}<th>붙임</th><th>확인</th><th></th></tr></thead><tbody>${rows.map(row).join("")}</tbody></table></div>` : emptyBox(`<p class="hint" style="margin:0">아직 올린 안건이 없습니다. 위에 안건 파일(.hwpx)과 붙임을 끌어다 놓거나, 파일이 없으면 '파일 없이 입력'에 안건명·제안자를 넣으세요.</p>`)}
   ${IK.loose.length ? `<div class="cond soft"><b>짝을 못 찾은 붙임</b> — 어느 안건의 붙임인지 고르세요.<br>${IK.loose.map((a,k)=>`<span class="att">${esc(a.fileName)}</span> <select class="inp" data-loose="${k}"><option value="">안건 고르기</option>${a.ext==="hwpx"?`<option value="__agenda">↳ 붙임 아님: 안건으로 올리기</option>`:""}${rows.filter(x=>!x.it.wd).map(({it,i})=>`<option value="${it.id}">${itemNo(rec,i)} ${esc(it.title.slice(0,24))}</option>`).join("")}</select> <button type="button" class="x" data-loosedel="${k}" title="잘못 올린 파일이면 빼기" aria-label="이 파일 빼기">×</button>`).join("<br>")}</div>` : ""}
   <p class="hint" data-short="유형·부담경비는 안건명으로 짐작합니다. 틀리면 고치세요.">안건 유형은 안건명으로 짐작합니다(규정·학칙 + 개정·제정 → 규정개정, '보고'로 끝남 → 보고). 부담경비는 '체험학습, 수학여행, 수련활동, 졸업앨범, 방과후' 같은 낱말로 짐작합니다. 직위는 담당자 칸에서 읽고(교육행정실장 → 행정실장), 없으면 '교사'로 채웁니다. 고치면 이 컴퓨터가 이름별로 기억합니다. 행정실장·교감처럼 한 명뿐인 직위는 성명이 없어도 됩니다. ${webIcon("law")} 표시(부담경비·규정개정)는 홈페이지 게시용 안건에 들어갑니다. <span class="badge b-op">의견수렴</span>은 미리 학부모 의견을 들어야 하는 안건(학칙 제·개정, 학부모 경비 부담, 방과후·방학 중 교육·수련활동, 학교운영지원비, 학교급식)입니다.</p>
 </div>
@@ -3037,7 +3078,7 @@ ${late ? lateActions(rec) : ""}
 ${!late || !rec.fromLedger ? `<div class="card">
   <h3>최종 안건 접수</h3>
   <div class="row-btns"><button type="button" class="btn ${fin?"ghost sm":"hl"}" id="ikFinal">${fin?"처음 안건집 다시 만들기":"최종 안건 접수 · 안건집 묶음 받기 (.zip)"}</button><button type="button" class="btn ghost sm" id="ikPv">안건집 미리보기</button>${fin && !rec.fromLedger ? `<button type="button" class="btn ghost sm" id="ikUnfinal" title="최종 접수 전으로 돌아가 순서를 바꾸거나 안건을 다시 넣습니다">최종 접수 되돌리기</button>` : ""}
-  <span class="small">zip 안: 안건집(표지·목록 + 안건, 한글 붙임은 해당 안건 뒤) · 홈페이지 게시용 안건(부담경비·규정개정이 있을 때) · 이름을 바꾼 PDF 붙임</span></div>
+  <span class="small">${noFile ? `<b>파일 없는 ${noFile}건은 표지·목록에만 들어갑니다</b> · ` : ""}zip 안: 안건집(표지·목록 + 안건, 한글 붙임은 해당 안건 뒤) · 홈페이지 게시용 안건(부담경비·규정개정이 있을 때) · 이름을 바꾼 PDF 붙임</span></div>
   ${fin ? `<p class="cond soft">최종 접수됨: ${esc(fin.at)} (${esc(fin.from)} ~ ${esc(fin.to)}). 이 뒤에 올리는 파일은 추가·긴급 제출로 받습니다.</p>` : ""}
   ${(IK.lastWarn||[]).length && !late ? `<p class="cond">${IK.lastWarn.map(esc).join("<br>")}</p>` : ""}
   <p class="hint" data-short="파일마다 새 쪽에서 시작하고, 쪽번호는 새로 매깁니다.">용지·여백은 올린 파일의 한글 설정 그대로 두고, 파일마다 새 쪽에서 시작합니다(끝의 빈 줄은 지워 빈 쪽이 생기지 않게). 원래 쪽번호는 모두 지우고 첫 안건부터 아래 가운데 "- 1 -"로 새로 넣습니다. 표지·목록에는 쪽번호를 넣지 않습니다.</p>
@@ -3119,6 +3160,21 @@ function wireIntake(rec, late){
     putIntake(rec); selectMeetingKeepView(rec.key); renderIntake(S.view); toast("철회로 표시했습니다. 왼쪽 '안건 추가·수정·철회 기안'에서 철회서와 기안문을 받으세요");
   };
   const wn = $("wdNo"); if(wn) wn.onclick = () => { IK.wdOpen = null; renderIntake(S.view); };
+  const tt = $("ikTTitle"), tp = $("ikTPos"), tn = $("ikTName");
+  const typedAdd = () => {
+    const pos = tp.value.trim(), nm = tn.value.trim();
+    if(!tt.value.trim()){ toast("안건명을 넣으세요"); tt.focus(); return; }
+    if(pos && nm) rememberPos(nm, pos);
+    if(addTypedItems(rec, [tt.value], late, [pos, nm].filter(Boolean).join(" "))) setTimeout(() => { const e = $("ikTTitle"); if(e) e.focus(); }, 0);
+  };
+  $("ikTAdd").onclick = typedAdd;
+  [tt, tp, tn].forEach(e => e.addEventListener("keydown", ev => { if(ev.key==="Enter" && !ev.isComposing){ ev.preventDefault(); typedAdd(); } }));
+  tt.addEventListener("paste", ev => {   // 여러 줄(엑셀·한글 표) 붙여 넣기 → 줄마다 안건
+    const t = (ev.clipboardData || window.clipboardData).getData("text"); if(!/[\n\t]/.test(t.trim())) return;
+    ev.preventDefault();
+    addTypedItems(rec, t.replace(/\r/g, "").split("\n").filter(l => l.trim()), late, "");
+  });
+  if(IK.flash) setTimeout(() => { IK.flash = null; }, 0);
   const st = $("ikStart"); if(st) st.addEventListener("change", ()=>{ rec.startNo = Math.max(1, +st.value||1); putIntake(rec); renderIntake(S.view); });
   const box = $("intakeBox");
   box.querySelectorAll("tr[data-id]").forEach(tr => {
@@ -3696,6 +3752,7 @@ const COACH = {
   "base:ledger": [["#drop", "쓰던 <b>안건대장 엑셀</b>을 끌어다 놓으면 회의 목록과 다음 번호를 읽습니다. 없으면 건너뛰세요."]],
   "base:members": [[".memtbl", "기수별 <b>위원 명단</b>을 적고"], ["#memApply", "<b>명단 반영</b>을 눌러야 문서에 들어갑니다."]],
   "intake:main": [["#ikDrop", "<b>안건 파일</b>을 여기에 끌어다 놓으세요. 붙임(pdf·한글)도 한꺼번에 넣으면 알아서 짝지어집니다. .hwp도 됩니다."],
+                  ["#ikTyped", "안건 파일이 아직 없어도 <b>안건명·제안자</b>만 넣으면 공문·공고문·표지·목록을 만들 수 있습니다. 안건 파일과 붙임은 나중에 그 줄의 <b>[+ 파일 등록]·[+ 붙임]</b>으로 넣으세요."],
                   ["table.ag", "안건명·제안자를 확인하고 <b>▲▼</b>로 순서를 바꾸세요. 잘못 넣은 줄은 <b>×</b>로 뺍니다."],
                   ["#ikFinal", "순서를 확인했으면 <b>최종 접수</b>를 누르세요. 안건번호가 매겨지고 안건집(.zip)을 받습니다."]],
   "intake:doc": [["#tabs", "학교장 명의 <b>기안문</b>입니다. 내려받아 업무관리시스템에서 기안하세요."], ["#sch_no", "기안한 뒤 <b>기안번호·생산일자</b>를 넣으면 다음 공문의 '관련'에 들어갑니다."]],
