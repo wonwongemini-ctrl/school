@@ -2,8 +2,8 @@
 
 | 프로그램 | 언제 | 바로 쓰기 | 설명 |
 |---|---|---|---|
-| **학운위 구성 도우미** v2.6.5 | 매년 2~4월(위원 선출·구성) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/gusung.html | [블로그](https://blog.naver.com/oderobong/224438738839) |
-| **학운위 운영업무 도우미** v2.0.0 | 연중(회의 개최·진행·결과) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/unyeong.html | [사용설명서(노션)](https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc) · [블로그](https://blog.naver.com/oderobong/224428377136) |
+| **학운위 구성 도우미** v2.7.0 | 매년 2~4월(위원 선출·구성) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/gusung.html | [블로그](https://blog.naver.com/oderobong/224438738839) |
+| **학운위 운영업무 도우미** v2.4.0 | 연중(회의 개최·진행·결과) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/unyeong.html | [사용설명서(노션)](https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc) · [블로그](https://blog.naver.com/oderobong/224428377136) |
 
 - 학운위 첫 화면: https://wonwongemini-ctrl.github.io/school/hakwoonwi/
 - 운영업무 도우미는 예전 주소(https://wonwongemini-ctrl.github.io/my-calculators/schoolboard.html)에서도 같은 버전으로 열립니다. 두 주소는 같은 사이트라 입력값도 공유됩니다.
@@ -12,6 +12,7 @@
 ## 공통 안내
 - 두 프로그램 모두 **인터넷으로 아무것도 보내지 않고** 브라우저 안에서만 동작합니다. 입력한 내용은 이 PC 브라우저에만 저장됩니다.
 - 같은 브라우저에서 두 프로그램을 함께 써도 입력값이 섞이지 않습니다.
+- 두 프로그램의 일정은 같은 사이트의 [교무실 업무 도우미](https://wonwongemini-ctrl.github.io/school/) 첫 화면 통합 달력·오늘 할 일에도 나타납니다(같은 브라우저 안에서만). 구성 도우미는 일정 메뉴, 운영 도우미는 이달 일정 달력 아래에서 끌 수 있습니다.
 - 업무망 PC처럼 인터넷이 없는 곳에서는 프로그램 화면을 Ctrl+S로 저장해 HTML 파일로 열면 됩니다.
 - 경기도 조례·지침 기준으로 만든 **참고용 도구**입니다. 최종 확인과 책임은 학교에 있습니다.
 

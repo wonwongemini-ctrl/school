@@ -523,6 +523,7 @@ table.ag td .inp[data-f=title]{min-width:170px}
 .cal .cd{grid-row:1;text-align:center}.cal .cd span{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%}
 .cal .cd.out{opacity:.35}.cal .sun{color:#e5484d}.cal .sat{color:#2383e2}.cal .cd.td span{background:#2383e2;color:#fff;font-weight:700}
 .cal .cbar{all:unset;box-sizing:border-box;height:15px;background:color-mix(in srgb,var(--c) 22%,transparent);border-left:3px solid var(--c);border-radius:4px;margin:0 2px;overflow:hidden;white-space:nowrap;font-size:10px;line-height:15px;color:color-mix(in srgb,var(--c) 70%,var(--ink));cursor:pointer}
+.cal .csend{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--muted);cursor:pointer}.cal .csend input{margin:0}
 .cal .cbar:hover{filter:brightness(.95);outline:1px solid var(--c)}
 .cal .cbar em{font-style:normal;padding-left:3px}
 .cal .cbar.cs{border-left:0;border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}.cal .cbar.ce{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
@@ -997,8 +998,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.3.0", date:"2026-10-23"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.0", date:"2026-10-30"};
 const CHANGELOG = [
+  {v:"2.4.0", date:"2026-10-30", items:[
+    "회의 일정(안건 접수 마감·공고·방청 신청·부담경비 의견수렴·회의·결과 이송·홍보)을 같은 사이트의 '교무실 업무 도우미' 첫 화면 통합 달력·오늘 할 일에도 보냄(이 브라우저 안에서만, 인터넷으로 보내지 않음)",
+    "이달 일정 달력 아래 '첫 화면 달력에도 보내기'로 켜고 끔"
+  ]},
   {v:"2.3.0", date:"2026-10-23", items:[
     "안건 접수: 안건 파일 없이 안건명·제안자만 넣어도 접수(엑셀·한글 표에서 여러 줄 복사해 붙여 넣기 가능). 파일은 나중에 그 줄의 [+ 파일 등록]으로",
     "파일 없는 안건은 공문·공고문·안건 표지·목록에 들어가고, 안건집에는 표지·목록만 들어감"
@@ -1054,7 +1059,8 @@ const STORE = {
   msgs:"haksaengwi_msgs",                   // 메시지 문구 틀(고친 것만)
   people:"haksaengwi_people",               // 안건 제안자 이름 → 직위 기억
   qaStar:"haksaengwi_qastar",               // Q&A 별표
-  intakes:"haksaengwi_intakes"              // 안건접수로 만든 회의: 접수 목록·번호·날짜(파일 내용은 저장하지 않음)
+  intakes:"haksaengwi_intakes",             // 안건접수로 만든 회의: 접수 목록·번호·날짜(파일 내용은 저장하지 않음)
+  calSend:"haksaengwi_calsend"              // 첫 화면(교무실 업무 도우미) 달력에 일정 보내기: "off"면 안 보냄
 };
 const STORE_SCHEMA = 1;
 function migrateStore(){
@@ -2385,7 +2391,7 @@ function loadMeetState(key){
   let o = null; try{ o = JSON.parse(localStorage.getItem(STORE.meet(key))||"null"); }catch(e){}
   S.mt = Object.assign({dates:{}, gen:{}, done:{}, zoom:{}, f:{}}, o||{});
 }
-function saveMeetState(){ if(!S.cur || !S.mt) return; try{ localStorage.setItem(STORE.meet(S.cur.key), JSON.stringify(S.mt)); }catch(e){} }
+function saveMeetState(){ if(!S.cur || !S.mt) return; try{ localStorage.setItem(STORE.meet(S.cur.key), JSON.stringify(S.mt)); }catch(e){} queueCal(); }
 
 /* ----- 단계 통계: 받은 문서 수 / 받을 문서 수 ----- */
 function stepDocs(stepId){
@@ -3571,9 +3577,11 @@ function renderCal(){
   box.innerHTML = `<div class="cal"><div class="ch"><button type="button" data-cm="-1" aria-label="지난달">◀</button><b>${Y}년 ${M+1}월</b><button type="button" data-cm="1" aria-label="다음달">▶</button><button type="button" class="cx" aria-label="닫기">✕</button></div>
 <div class="cwh">${"일월화수목금토".split("").map((x, i) => `<span class="${i===0?"sun":i===6?"sat":""}">${x}</span>`).join("")}</div>${weeks}
 ${used.length ? `<div class="clg">${used.map(e => `<span><i style="background:${e.c}"></i>${esc(e.t)}</span>`).join("")}${ev.some(e=>e.faint) ? `<span><i class="fa"></i>다른 회의</span>` : ""}</div>` : ""}
-<p class="cnote">${S.cur ? "줄을 누르면 그 일을 하는 화면으로 갑니다. 날짜는 각 화면에서 고칩니다." : "회의를 고르면 그 회의의 일정이 표시됩니다."}</p></div>`;
+<p class="cnote">${S.cur ? "줄을 누르면 그 일을 하는 화면으로 갑니다. 날짜는 각 화면에서 고칩니다." : "회의를 고르면 그 회의의 일정이 표시됩니다."}</p>
+<label class="csend"><input type="checkbox" id="calSend" ${calSendOn() ? "checked" : ""}> 교무실 업무 도우미 첫 화면 달력에도 보내기</label></div>`;
   box.querySelectorAll("[data-cm]").forEach(b => b.onclick = e => { e.stopPropagation(); const d = new Date(CAL.y, CAL.m + +b.dataset.cm, 1); CAL.y = d.getFullYear(); CAL.m = d.getMonth(); renderCal(); });
   box.querySelector(".cx").onclick = () => calToggle(false);
+  const cs = $("calSend"); if(cs) cs.onchange = () => { try{ localStorage.setItem(STORE.calSend, cs.checked ? "on" : "off"); }catch(e){} publishCal(); toast(cs.checked ? "첫 화면 달력에 학운위 일정을 보냅니다" : "첫 화면 달력에서 학운위 일정을 뺐습니다"); };
   box.querySelectorAll(".cbar").forEach(b => b.onclick = () => { const e = ev[+b.dataset.k]; if(!e) return; calToggle(false);
     if(e.key){ selectMeeting(e.key); return; }
     if(e.view && VIEWS[e.view]){ S.step = VIEWS[e.view].step || S.step; go(e.view); } });
@@ -3593,6 +3601,57 @@ function wireCal(){
   document.addEventListener("click", e => { if(CAL.open && !e.target.closest("#calPop") && !e.target.closest("#calBtn")) calToggle(false); });
   document.addEventListener("keydown", e => { if(e.key === "Escape" && CAL.open) calToggle(false); });
 }
+
+/* ===== 일정 우체통 (v2.4.0) =====
+   같은 사이트(wonwongemini-ctrl.github.io)의 '교무실 업무 도우미' 첫 화면이 통합 달력·오늘 할 일에 보여 준다.
+   이 브라우저 저장 공간 'school-cal-v1'의 '학운위 운영' 칸(hakwoonwi-run)만 덮어쓴다. 인터넷으로는 아무것도 보내지 않는다.
+   형식: {v:1, sources:{<키>:{name, color, url, updated, items:[{id, date, end?, title, kind:'task'|'event', done?}]}}} */
+const CAL_SRC = "hakwoonwi-run";
+function calSendOn(){ try{ return localStorage.getItem(STORE.calSend) !== "off"; }catch(e){ return true; } }
+function meetCalEvents(m){
+  // 고른 회의는 이달 일정 달력과 같은 계산(화면의 날짜 칸 기준), 다른 회의는 저장된 회의일·날짜로 계산
+  if(S.cur && m.key === S.cur.key && $("m_date")) return calEvents().filter(e => !e.faint);
+  let o = null; try{ o = JSON.parse(localStorage.getItem(STORE.meet(m.key)) || "null"); }catch(e){}
+  const F = (o && o.f) || {}, D = (o && o.dates) || {};
+  const md = parseYmd(F.m_date) || m.date; if(!md) return [];
+  const ev = [], add = (s, e, t, main) => { if(s) ev.push({s:ymd(s), e:ymd(e || s), t, main}); };
+  if(F.mtype !== "긴급임시회") add(addDays(md, -8), null, "안건 접수 마감");
+  const nd = parseYmd(D.open); if(nd) add(nd, null, "공고·안건 발송");
+  add(md, null, `제${m.hoe}회 회의`, 1);
+  const r = parseYmd(D.result) || addDays(md, 1);
+  add(r, addDays(md, 7) > r ? addDays(md, 7) : r, "결과 이송·홍보");
+  return ev;
+}
+function publishCal(){
+  try{
+    const KEY = "school-cal-v1"; let box = {};
+    try{ box = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }catch(e){ box = {}; }
+    if(!box.sources || typeof box.sources !== "object") box.sources = {};
+    if(!calSendOn()){ if(box.sources[CAL_SRC]){ delete box.sources[CAL_SRC]; localStorage.setItem(KEY, JSON.stringify(box)); } return; }
+    if(!S.meetings || !S.meetings.length) return;   // 대장·접수 기록을 아직 안 열었으면 지난번에 보낸 일정을 그대로 둠
+    const today = ymd(new Date()), lo = ymd(addDays(new Date(), -400)), hi = ymd(addDays(new Date(), 400)), items = [];
+    S.meetings.forEach(m => {
+      const ev = meetCalEvents(m), mainE = ev.find(e => e.main); if(!mainE) return;
+      if(mainE.s < lo || mainE.s > hi) return;   // 1년 넘게 지난 회의는 보내지 않음
+      const past = mainE.s < today;   // 회의가 끝났으면 그 전 할 일은 끝난 것으로
+      let tm = ""; if(S.cur && m.key === S.cur.key && $("m_time")) tm = $("m_time").value;
+      else { try{ tm = ((JSON.parse(localStorage.getItem(STORE.meet(m.key)) || "null") || {}).f || {}).m_time || ""; }catch(e){} }
+      ev.forEach((e, i) => {
+        const task = e.s === e.e && !e.main;   // 하루짜리 준비 일(마감·공고)은 할 일, 회의·기간은 달력 일정
+        const title = (e.main ? `학운위 ${e.t}` : `제${m.hoe}회 ${e.t}`) + (e.main && tm ? ` ${tm}` : "");
+        const it = {id:`${m.key}:${i}:${e.t}`, date:e.s, title, kind: task ? "task" : "event"};
+        if(e.e > e.s) it.end = e.e;
+        if(task && past) it.done = true;
+        items.push(it);
+      });
+    });
+    box.v = 1;
+    box.sources[CAL_SRC] = {name:"학운위 운영", color:"#8E5BD0", url:location.href.split(/[?#]/)[0], updated:new Date().toISOString(), items};
+    localStorage.setItem(KEY, JSON.stringify(box));
+  }catch(e){}
+}
+let calSendT = 0;
+function queueCal(){ clearTimeout(calSendT); calSendT = setTimeout(publishCal, 600); }
 /* ===== 한글 .hwp → .hwpx 변환 (안건 접수에서 .hwp를 올리면 그 자리에서 바꾼다) =====
    제작자가 만든 'HWP → HWPX 변환' (https://wonwongemini-ctrl.github.io/school-tool/hwp2hwpx.html, v2.1)의
    변환 엔진 묶음(assets/hwpconv)을 그대로 넣었다. 브라우저 안 파이썬(Pyodide)으로 이 PC 안에서만 변환한다.
@@ -5197,6 +5256,7 @@ function checks(d){
 let timer = null;
 function schedule(){ clearTimeout(timer); timer = setTimeout(render, 180); }
 function render(){
+  queueCal();
   if(!S.cur) return;
   saveSettings();
   try{ localStorage.setItem(STORE.place, $("m_place").value); }catch(e){}
@@ -5503,6 +5563,7 @@ function init(){
 /* 접수 기록이 바뀐 뒤 같은 화면을 유지하면서 회의 정보를 다시 읽는다 */
 function selectMeetingKeepView(key){ const v = S.view, tab = S.tab; selectMeeting(key); if(S.view!==v) go(v); S.tab = tab; render(); }
 function fillMeetingSelect(){
+  queueCal();
   const sel = $("m_select"); sel.innerHTML = "";
   if(!S.cur) sel.add(new Option("회의를 고르세요", ""));
   S.meetings.forEach(m => sel.add(new Option(`${m.src==="intake" && !m.fromLedger?"[안건접수]":"[안건대장]"} 제${m.gi}기 제${m.hoe}회 · ${m.date?fDotW(m.date):"회의일 미정"} · 안건 ${m.items.length}건`, m.key)));

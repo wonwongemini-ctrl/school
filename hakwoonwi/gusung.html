@@ -2419,9 +2419,10 @@ swap('not_a6', () => [crimeConsentForm()], {}); swap('loc_a4', () => [crimeConse
 </script>
 <script>
 /* ===== UI v2 ===== */
-const APP_VERSION = '2.6.5';
-const APP_BUILD = '2026-10-12';
+const APP_VERSION = '2.7.0';
+const APP_BUILD = '2026-10-30';
 const CHANGELOG = [
+  ['2.7.0', '2026-10-30', ['일정 메뉴의 기안 소업무 일정과 후보 등록·선거공보·지역위원 추천 기간을 같은 사이트의 \'교무실 업무 도우미\' 첫 화면 통합 달력·오늘 할 일에도 보냄(이 브라우저 안에서만, 인터넷으로 보내지 않음). 일정 메뉴에서 끌 수 있음. 단계 \'완료\'를 누르면 첫 화면에도 끝난 일로 표시']],
   ['2.6.5', '2026-10-12', ['점검 결과(HWPX)·세부 일정표의 표: 쪽 중간에서 시작해 다음 쪽으로 넘어가도 표가 통째로 밀리지 않고 셀 단위로 나뉘도록 "글자처럼 취급" 해제 + 자동으로 나뉜 표의 경계선 설정 + 제목 줄 반복']],
   ['2.6.4', '2026-10-12', ['HWPX 표가 한 쪽보다 길면 "글자처럼 취급"을 해제해 쪽 경계에서 셀 단위로 나뉘게 하고, "자동으로 나뉜 표의 경계선 설정"을 켬(제목 줄 자동 반복 유지). 한 쪽 안에 들어가는 표는 그대로']],
   ['2.6.3', '2026-10-12', ['왼쪽 메뉴: 기본 입력·구성 단계·관리 제목을 굵게 강조, 기본 입력 하위 메뉴를 상자로 묶음']],
@@ -2509,6 +2510,7 @@ const LS = 'hakwoonwi-builder-v1';
 const webIcon = w => w ? `<i class="webi ${w[0]}" title="${w[0] === 'law' ? '홈페이지 게시 필수' : '홈페이지 게시(가정통신문·게시판 등과 함께, 권장)'}" aria-label="${w[0] === 'law' ? '홈페이지 게시 필수' : '홈페이지 게시 권장'}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="8" cy="8" rx="2.6" ry="6.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2 8h12M3.2 4.8h9.6M3.2 11.2h9.6" stroke="currentColor" stroke-width="1.1"/></svg></i>` : '';
 const CREDIT = 'https://blog.naver.com/oderobong/224438738839';
 let S = load();
+setTimeout(publishCal, 1200); // 열 때 한 번: 첫 화면 달력의 학운위 구성 일정을 최신으로
 let TPL = null, TPL_ERR = '', LTPL = null;
 let view = { menu: 'step:plan', tab: {}, showAllPaths: false, diffWith: null, imp: null };
 let pvToken = 0, tplReadyResolve; const tplReady = new Promise(r => tplReadyResolve = r);
@@ -2532,7 +2534,41 @@ function load() {
 }
 function merge(a, b) { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) merge(a[k], b[k]); else a[k] = b[k]; } return a; }
 let saveT;
-function save() { S.meta.updated = new Date().toISOString(); clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { } }, 250); }
+function save() { S.meta.updated = new Date().toISOString(); clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { } publishCal(); }, 250); }
+/* ---------- 일정 우체통 (v2.7.0) ----------
+   같은 사이트(wonwongemini-ctrl.github.io)의 '교무실 업무 도우미' 첫 화면이 통합 달력·오늘 할 일에 보여 준다.
+   이 브라우저 저장 공간 'school-cal-v1'의 '학운위 구성' 칸(hakwoonwi-setup)만 덮어쓴다. 인터넷으로는 아무것도 보내지 않는다.
+   일정 메뉴를 한 번이라도 열었거나 우리 학교 기안 서식을 불러온 뒤부터 보낸다(예시 학교로 처음 열어 본 기본 일정은 보내지 않음).
+   소업무 중 기안(…_g) 업무만 보낸다. 같은 날 딸린 업무(위촉장 수여·회의록 등)는 첫 화면 '오늘 할 일'이 너무 길어지지 않게 뺀다. */
+const CAL_SRC = 'hakwoonwi-setup', ISOD = /^\d{4}-\d{2}-\d{2}$/;
+function calSendOn() { return !S.opts.calOff; }
+function publishCal() {
+  try {
+    const KEY = 'school-cal-v1'; let box = {};
+    try { box = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { box = {}; }
+    if (!box.sources || typeof box.sources !== 'object') box.sources = {};
+    if (!calSendOn() || !(S.meta.schSeen || (S.tplName && S.tplName !== DEFAULT_ODT_NAME))) { if (box.sources[CAL_SRC]) { delete box.sources[CAL_SRC]; localStorage.setItem(KEY, JSON.stringify(box)); } return; }
+    const C = ctx(S), items = [], seen = new Set();
+    activeDocs(C).forEach(d => {   // 현재 경로(투표/무투표)의 기안 소업무만
+      if (!/_g\d*n?$/.test(d.id)) return;
+      const dt = taskDate(C, d.task.dk); if (!ISOD.test(dt || '')) return;
+      const k = dt + '|' + d.task.what; if (seen.has(k)) return; seen.add(k);
+      items.push({ id: d.id, date: dt, title: d.task.what, kind: 'task', done: !!S.done[d.step] });
+    });
+    const s = C.s, range = (a, b, t, on = true) => { if (on && ISOD.test(s[a] || '') && ISOD.test(s[b] || '') && s[a] <= s[b]) items.push({ id: a, date: s[a], end: s[b], title: t, kind: 'event' }); };
+    range('regStart', 'regEnd', '학부모위원 후보 등록 기간');
+    range('tRegStart', 'tRegEnd', '교원위원 후보 등록 기간');
+    range('bulStart', 'bulEnd', '학부모 선거공보 기간', !C.pNoVote);
+    range('tBulStart', 'tBulEnd', '교원 선거공보 기간', !C.tNoVote);
+    range('localRecStart', 'localRecEnd', '지역위원 추천 기간');
+    if (ISOD.test(s.voteDate || '') && !C.pNoVote) items.push({ id: 'voteDay', date: s.voteDate, title: `학부모위원 선거${s.voteTime ? ' ' + s.voteTime : ''}`, kind: 'event' });
+    if (ISOD.test(s.firstMeetDate || '')) items.push({ id: 'firstMeet', date: s.firstMeetDate, title: `학운위 첫 회의(위원장 선출)${s.firstMeetTime ? ' ' + s.firstMeetTime : ''}`, kind: 'event' });
+    box.v = 1;
+    box.sources[CAL_SRC] = { name: '학운위 구성', color: '#B455C9', url: location.href.split(/[?#]/)[0], updated: new Date().toISOString(), items };
+    localStorage.setItem(KEY, JSON.stringify(box));
+  } catch (e) { }
+}
+
 const b64ToBuf = b64 => { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; };
 const bufToB64 = buf => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 const snaps = { get() { try { return JSON.parse(localStorage.getItem(LS + '-snaps') || '[]'); } catch (e) { return []; } }, set(v) { try { localStorage.setItem(LS + '-snaps', JSON.stringify(v)); return true; } catch (e) { toast('저장 공간이 부족해 스냅샷을 저장하지 못했습니다'); return false; } } };
@@ -2870,6 +2906,7 @@ function setSch() {
   if (t === 'l') body = `<div class="grid">${D('localRecStart')}${D('localRecEnd')}${D('localMeetDate', '3월 30일까지', C.lNoVote ? '지역위원 당선 확정일(무투표)' : '')}${T('localMeetTime')}${D('firstMeetDate', '4월 1일~15일')}${T('firstMeetTime')}${D('resultDate')}</div>`;
   if (t === 'all') body = `<div class="paper hw" style="min-height:0">${ENG.html(scheduleBlocks(C, STEPS.map(s => s.id)))}</div>`;
   const ck = checks(S);
+  body += `<p class="cond soft">${calSendOn() ? '이 일정은 같은 브라우저에서 여는 <b>교무실 업무 도우미</b> 첫 화면 통합 달력·오늘 할 일에도 나타납니다(이 컴퓨터 안에서만, 인터넷으로 보내지 않음).' : '첫 화면(교무실 업무 도우미) 달력에 일정을 보내지 않고 있습니다.'} <button class="linkbtn" data-act="calsend">${calSendOn() ? '보내지 않기' : '다시 보내기'}</button></p>`;
   if (t !== 'all') body += `<h4>지침 점검</h4><ul class="ck-list">${ck.map(c => `<li class="${c.ok ? 'ok' : 'bad'}">${c.ok ? '적합' : '확인 필요'} — ${esc(c.msg)}</li>`).join('')}</ul>`;
   shell('일정', '매해 바뀌는 날짜만 입력하면 모든 문서·소업무 카드·상단 단계 날짜가 함께 바뀝니다.', [{ id: 'p', label: '학부모위원' }, { id: 't', label: '교원위원' }, { id: 'l', label: '지역위원·위원장' }, { id: 'all', label: '전체 세부 일정표' }], 'sch', body,
     `<button class="btn ghost" data-act="autosch">${S.base.year}학년도 기본 일정 채우기</button>${t === 'all' ? '<button class="btn" data-act="schedfile">세부 일정표 받기(HWPX)</button>' : ''}`);
@@ -3025,6 +3062,7 @@ document.addEventListener('click', async e => {
   if (a === 'step') return busy(() => downloadStep(t.dataset.step));
   if (a === 'all') return busy(downloadAll);
   if (a === 'schedfile') return busy(async () => saveBlob(`${S.base.gen}기_전체_세부일정표.hwpx`, await ENG.hwpx(scheduleBlocks(ctx(S), STEPS.map(s => s.id)), '세부 일정표')));
+  if (a === 'calsend') { S.opts.calOff = !S.opts.calOff; save(); publishCal(); renderMain(); toast(S.opts.calOff ? '첫 화면 달력에서 학운위 구성 일정을 뺐습니다' : '첫 화면 달력에 학운위 구성 일정을 보냅니다'); return; }
   if (a === 'guideoff') { S.opts.guideOff = true; save(); renderMain(); return; }
   if (a === 'paths') { view.showAllPaths = !view.showAllPaths; renderMain(); return; }
   if (a === 'autosch') { S.sch = { ...S.sch, ...defaultSchedule(+S.base.year) }; save(); renderAll(); toast('기본 일정을 채웠습니다. 학교 사정에 맞게 고쳐 주세요'); return; }
