@@ -203,7 +203,7 @@ dialog::backdrop{background:rgba(27,27,31,.45)}
 .srcs button.lg.off{opacity:.45}
 .srcs button.lg.off .nm{text-decoration:line-through}
 .srcs .cnt{min-width:22px;height:19px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--ink);border-radius:4px;font-size:10.5px;font-weight:700;line-height:1}
-.srcpop{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));max-height:min(60vh,460px);overflow:auto;z-index:5;background:#fff;border:3px solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink);padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.srcpop{max-height:340px;overflow:auto;background:#FFFDF6;border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);margin-top:-6px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:14px}
 .srcpop .ph{display:flex;align-items:center;gap:8px}
 .srcpop .ph b{font-family:var(--f-head);font-weight:400;font-size:19px}
 .srcpop .ph .x{margin-left:auto}
@@ -281,7 +281,7 @@ footer p{margin:0}
   <div class="clist" id="nsSchools" style="margin-top:8px"></div>
   <p class="sub" id="nsPicked" style="font-size:14px;font-weight:700;margin-top:8px"></p>
   <div class="grid-form">
-    <label class="field">인증키<input type="text" id="nsKey" maxlength="64" placeholder="개방 포털 인증키" autocomplete="off" spellcheck="false"><small>없으면 학년도 끝까지(최대 26주) 평일(월~금) 일정을 주마다 받아요(한 주 5건까지). 넣으면 학년도 전체를 한 번에 받아요. <a href="https://open.neis.go.kr" target="_blank" rel="noopener">open.neis.go.kr</a> 로그인 → 인증키 신청(무료). 이 브라우저에만 저장하고 목록 내보내기에는 넣지 않아요.</small></label>
+    <label class="field">인증키<input type="text" id="nsKey" maxlength="64" placeholder="개방 포털 인증키" autocomplete="off" spellcheck="false"><small>없으면 학년도 평일(월~금) 일정을 주마다 받아요(한 주 5건까지). 지난 일정은 처음 한 번만, 앞으로의 일정은 날마다 받아요. 넣으면 학년도 전체를 한 번에 받아요. <a href="https://open.neis.go.kr" target="_blank" rel="noopener">open.neis.go.kr</a> 로그인 → 인증키 신청(무료). 이 브라우저에만 저장하고 목록 내보내기에는 넣지 않아요.</small></label>
     <label class="field">빼고 볼 일정 (쉼표로 나눠 적기)<input type="text" id="nsSkip" maxlength="200" autocomplete="off"><small>이름에 이 글자가 들어간 일정은 달력에 넣지 않아요.</small></label>
   </div>
   <div class="row" style="margin-top:10px">
@@ -349,7 +349,7 @@ footer p{margin:0}
 </div>
 
 <footer>
-  <p>교무실 업무 도우미 v2.2 · 2026-10-31 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
+  <p>교무실 업무 도우미 v2.3 · 2026-10-31 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
   <p>만든 사람: <a href="https://blog.naver.com/oderobong" target="_blank" rel="noopener">blog.naver.com/oderobong</a> · 오류 제보·의견은 블로그 댓글로</p>
 </footer>
 </div>
@@ -804,7 +804,6 @@ function renderSrcPop(){
  if(isNeis)row.appendChild(el('span',{class:'sub',style:'font-size:13px',text:'끄기·다시 받기는 [설정] › 나이스 학사일정'}));
  box.appendChild(row);
 }
-$('calDlg').addEventListener('click',function(e){if(POP&&!$('srcPop').contains(e.target)&&!e.target.closest('#calSrcs')){POP=null;renderSrcPop();renderCalDlg();}});
 $('calDlg').addEventListener('close',function(){POP=null;$('srcPop').hidden=true;});
 $('icsImportBtn').addEventListener('click',function(){$('icsFile').click();});
 function icsDate(v){var m=/(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2}))?/.exec(v||'');if(!m)return null;return {d:m[1]+'-'+m[2]+'-'+m[3],t:m[4]&&!/VALUE=DATE[;:]/.test(v)?m[4]+':'+m[5]:'',allday:!m[4]};}
@@ -944,7 +943,23 @@ function writeNeisBox(items){
   b.v=1;localStorage.setItem(CALKEY,JSON.stringify(b));}catch(e){}
  renderLegend();renderTodo();renderBadge();if($('calDlg').open)renderCalDlg();
 }
-var neisBusy=false;
+var neisBusy=false,NEIS_PAST='school-neis-past';
+function neisSY(){var t=new Date();return t.getMonth()<2?t.getFullYear()-1:t.getFullYear();}
+function neisPastRanges(){ // 학년도 첫날(3/1)부터 어제까지, 월~금 한 주씩
+ var sy=neisSY(),start=new Date(sy,2,1),t=new Date(),end=new Date(t.getFullYear(),t.getMonth(),t.getDate()-1),out=[];
+ if(end<start)return out;
+ var mon=new Date(start);mon.setDate(start.getDate()-((start.getDay()+6)%7));
+ for(var g=0;g<60&&mon<=end;g++){var fr=new Date(mon);fr.setDate(mon.getDate()+4);var a=mon<start?start:mon,b=fr>end?end:fr;
+  if(a<=b&&a.getDay()!==0&&a.getDay()!==6)out.push([ymd(a).replace(/-/g,''),ymd(b).replace(/-/g,'')]);else if(a<=b){var a2=new Date(a);while(a2<=b&&(a2.getDay()===0||a2.getDay()===6))a2.setDate(a2.getDate()+1);if(a2<=b)out.push([ymd(a2).replace(/-/g,''),ymd(b).replace(/-/g,'')]);}
+  mon.setDate(mon.getDate()+7);}
+ return out;}
+function neisPastGet(){try{var c=JSON.parse(localStorage.getItem(NEIS_PAST)||'null');if(c&&c.sy===neisSY()&&c.sd===S.neis.sd&&Array.isArray(c.rows))return c;}catch(e){}return null;}
+function neisWeekly(ranges,q,label,manual){ // 한 주씩 차례로, 잠깐씩 쉬며. 중간에 막히면 그때까지 받은 것만
+ var rows=[],done=0;
+ return ranges.reduce(function(p,r){return p.then(function(st){if(st.stop)return st;
+   return q(r).then(function(x){rows=rows.concat(x.rows);done++;if(manual)showMsg('nsMsg','학사일정을 받는 중… '+label+' '+done+'/'+ranges.length+'주');return new Promise(function(ok){setTimeout(function(){ok(st);},150);});})
+    .catch(function(e){if(!done)throw e;return {stop:e.message};});});},Promise.resolve({stop:''}))
+  .then(function(st){return {rows:rows,weeks:done,total:ranges.length,stop:st.stop};});}
 function neisWeeks(){ // 오늘부터 학년도 끝(2월 말)까지, 최소 8주 최대 26주
  var t=new Date(),y=t.getMonth()<2?t.getFullYear():t.getFullYear()+1,end=new Date(y,2,0),w=Math.ceil((end-t)/(7*864e5))+1;
  return Math.max(8,Math.min(26,w));}
@@ -956,19 +971,21 @@ function neisFetch(manual){
  if(S.neis.key){
   job=Promise.all(neisRanges().map(q)).then(function(all){var rows=[];all.forEach(function(x){rows=rows.concat(x.rows);});return {rows:rows,weeks:0,stop:''};});
  }else{
-  // 한 주씩 차례로 (나이스에 부담을 주지 않게 잠깐씩 쉬며). 중간에 막히면 그때까지 받은 것만 씀
-  var ranges=neisWeekRanges(neisWeeks()),rows=[],done=0;
-  job=ranges.reduce(function(p,r){return p.then(function(st){if(st.stop)return st;
-    return q(r).then(function(x){rows=rows.concat(x.rows);done++;if(manual)showMsg('nsMsg','학사일정을 받는 중… ('+done+'/'+ranges.length+'주)');return new Promise(function(ok){setTimeout(function(){ok(st);},150);});})
-     .catch(function(e){if(!done)throw e;return {stop:e.message};});});},Promise.resolve({stop:''}))
-   .then(function(st){return {rows:rows,weeks:done,stop:st.stop};});
+  var cache=manual?null:neisPastGet(),pastR=neisPastRanges();
+  var pastJob=cache?Promise.resolve({rows:cache.rows,weeks:cache.weeks||0,total:cache.weeks||0,stop:'',cached:true}):
+   (pastR.length?neisWeekly(pastR,q,'지난 일정',manual):Promise.resolve({rows:[],weeks:0,total:0,stop:''}));
+  job=pastJob.then(function(past){
+   if(!past.cached&&!past.stop&&past.weeks===past.total){try{localStorage.setItem(NEIS_PAST,JSON.stringify({sy:neisSY(),sd:S.neis.sd,weeks:past.weeks,at:new Date().toISOString(),rows:past.rows}));}catch(e){}}
+   return neisWeekly(neisWeekRanges(neisWeeks()),q,'앞으로의 일정',manual).catch(function(e){return {rows:[],weeks:0,total:0,stop:e.message};})
+    .then(function(fut){return {rows:past.rows.concat(fut.rows),weeks:fut.weeks,pastWeeks:past.weeks,pastCached:!!past.cached,stop:past.stop||fut.stop};});
+  });
  }
  job.then(function(res){
   var items=neisMerge(res.rows);
-  if(!S.neis.key&&!items.length&&res.weeks===0)throw new Error('학사일정을 받지 못했어요.');
+  if(!S.neis.key&&!items.length&&res.weeks===0&&!res.pastWeeks)throw new Error(res.stop||'학사일정을 받지 못했어요.');
   writeNeisBox(items);S.neis.last=todayS();save();
   if(manual)showMsg('nsMsg',S.neis.key?'학사일정 '+items.length+'개를 달력에 넣었어요 (학년도 전체).':
-   '인증키 없이 앞으로 '+res.weeks+'주 평일 일정 '+items.length+'개를 받았어요'+(res.stop?' (중간에 멈춤: '+res.stop+')':'')+'. 날마다 처음 열 때 다시 받아 앞날이 채워져요. 인증키를 넣으면 학년도 전체를 한 번에 받아요.');
+   '인증키 없이 학년도 평일 일정 '+items.length+'개를 받았어요 (지난 '+(res.pastWeeks||0)+'주'+(res.pastCached?'는 저장해 둔 것':'')+' + 앞으로 '+res.weeks+'주)'+(res.stop?' · 중간에 멈춤: '+res.stop+' (다음에 열 때 다시 받아요)':'')+'. 지난 일정은 처음 한 번만, 앞으로의 일정은 날마다 다시 받아요. 인증키를 넣으면 한 번에 받아요.');
  }).catch(function(e){if(manual)showMsg('nsMsg',e.message,true);})
  .then(function(){neisBusy=false;renderNeis();});
 }
