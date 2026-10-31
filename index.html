@@ -198,6 +198,12 @@ dialog::backdrop{background:rgba(27,27,31,.45)}
 .memo-edit{width:100%;min-height:90px;padding:8px 10px;border:2px solid var(--ink);border-radius:8px;font:inherit;font-size:14px;resize:vertical;background:#fff}
 .srcs{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
 .srcs span{display:inline-flex;align-items:center;gap:6px}
+.recv{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:2px dashed #CFC6B4;border-radius:10px;background:#FFFDF6;font-size:13px}
+.recv b.h{font-family:var(--f-head);font-weight:400;font-size:16px}
+.recv .ri{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.recv .ri .when{color:var(--sub)}
+.recv .ri.hid{opacity:.55}
+.recv .pill.mini{min-height:30px;padding:0 10px;font-size:12.5px}
 @media (max-width:640px){.mday{padding:3px}.sing .ev{font-size:0;height:6px;padding:0;margin-top:1px}.bar{font-size:0;height:6px;margin:1px 2px}.bar.cl{margin-left:0}.bar.cr{margin-right:0}.sing .more{font-size:10px}.dlg{padding:14px 12px 18px}}
 button.cal{background:none;border:none;padding:0;cursor:pointer;font:inherit}
 .cal .badge{position:absolute;right:-8px;top:0;min-width:28px;height:28px;padding:0 7px;border-radius:999px;background:var(--red);color:#fff;border:2px solid var(--ink);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:2}
@@ -258,23 +264,6 @@ footer p{margin:0}
   <h3 class="head">탁상 달력</h3>
   <p class="sub">책장의 탁상 달력을 누르면 통합 달력이 열려요. 강사 관리처럼 일정을 보내는 도구를 이 브라우저에서 열어 두면 그 일정도 같이 보여요.</p>
   <label class="field" style="max-width:560px">[구글 캘린더] 버튼 주소 (선택)<input type="url" id="calUrl" placeholder="https://calendar.google.com/" autocomplete="off"><small>통합 달력 위 [구글 캘린더] 버튼이 여는 주소예요. 비워 두면 내 구글 캘린더, 학교 공유 캘린더 주소를 넣어도 돼요.</small></label>
-  <h3 class="head" style="font-size:17px;margin-top:18px">나이스 학사일정 (선택)</h3>
-  <p class="sub">우리 학교가 나이스에 올린 학사일정(방학·행사·공휴일)을 통합 달력에 넣어요. 켜 두면 이 화면을 열 때 하루에 한 번, <b>학교 코드와 인증키만</b> 나이스 교육정보 개방 포털(open.neis.go.kr)에 보내 공개된 일정을 받아 와요. 다른 내용은 보내지 않아요.</p>
-  <div class="grid-form">
-    <label class="field">학교 이름<input type="text" id="nsName" maxlength="40" placeholder="예: ○○초등학교" autocomplete="off"></label>
-    <button type="button" class="pill" id="nsSearch">학교 찾기</button>
-  </div>
-  <div class="clist" id="nsSchools" style="margin-top:8px"></div>
-  <p class="sub" id="nsPicked" style="font-size:14px;font-weight:700;margin-top:8px"></p>
-  <div class="grid-form">
-    <label class="field">인증키<input type="text" id="nsKey" maxlength="64" placeholder="개방 포털 인증키" autocomplete="off" spellcheck="false"><small>없으면 몇 건만 와요. open.neis.go.kr 로그인 → 인증키 신청(무료). 이 브라우저에만 저장하고 목록 내보내기에는 넣지 않아요.</small></label>
-    <label class="field">빼고 볼 일정 (쉼표로 나눠 적기)<input type="text" id="nsSkip" maxlength="200" autocomplete="off"><small>이름에 이 글자가 들어간 일정은 달력에 넣지 않아요.</small></label>
-  </div>
-  <div class="row" style="margin-top:10px">
-    <button type="button" class="pill yellow" id="nsFetch">지금 불러오기</button>
-    <button type="button" class="pill" id="nsOff">학사일정 끄기</button>
-  </div>
-  <p id="nsMsg" class="ok" role="status" hidden></p>
   <p class="sub" style="font-size:13px">설정은 이 브라우저에 바로 저장돼요.</p>
 </section>
 
@@ -335,7 +324,7 @@ footer p{margin:0}
 </div>
 
 <footer>
-  <p>교무실 업무 도우미 v1.8 · 2026-10-30 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
+  <p>교무실 업무 도우미 v1.9 · 2026-10-31 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요</p>
   <p>만든 사람: <a href="https://blog.naver.com/oderobong" target="_blank" rel="noopener">blog.naver.com/oderobong</a> · 오류 제보·의견은 블로그 댓글로</p>
 </footer>
 </div>
@@ -355,6 +344,7 @@ footer p{margin:0}
     </div>
   </div>
   <div class="srcs" id="calSrcs"></div>
+  <div class="recv" id="calRecv"></div>
   <div class="mgrid" id="mgrid"></div>
   <div class="cal-side">
     <div>
@@ -431,13 +421,12 @@ var BUILTIN=[
  {id:'unyeong',spine:'학운위 운영',name:'학운위 운영업무 도우미',desc:'연중 · 회의 공문·공고, 명패·안건 인덱스·라벨, 기한 점검',tag:'학운위',url:B+'unyeong.html',helps:[['사용설명서','https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc'],['블로그 소개','https://blog.naver.com/oderobong/224428377136']]},
  {id:'hwp2hwpx',spine:'한글 변환',name:'HWP → HWPX 변환',desc:'옛 한글 파일을 새 형식으로, 폴더째 한 번에',tag:'한글 문서',url:A+'hwp2hwpx.html'},
  {id:'textbox',spine:'글상자 묶기',name:'그림 글상자 묶기',desc:'체계도 그림 위에 글상자를 얹어 hwpx로',tag:'한글 문서',url:A+'hwpx-picture-textbox.html'},
- {id:'staffpay',spine:'공무직 급여',name:'공무직 급여 도우미',desc:'통상시급 검산 · 연가보상비 계산 · 급여·수당 궁금한 것 찾아보기',tag:'기타',url:A+'staff-pay.html'},
- {id:'calc',spine:'계산기 모음',name:'나의 계산기 모음',desc:'학교 업무에 쓰는 여러 계산기',tag:'기타',url:'https://wonwongemini-ctrl.github.io/my-calculators/'}
+ {id:'staffpay',spine:'공무직 급여',name:'공무직 급여 도우미',desc:'통상시급 검산 · 연가보상비 계산 · 급여·수당 궁금한 것 찾아보기',tag:'기타',url:A+'staff-pay.html'}
 ];
 var BODY=['#FFD84D','#FFCF33','#FFE070'];
 var KEY='school-desk-v1';
-var S={mine:[],custom:[],links:{u1:'',u2:'',u3:'',cal:''},events:[],done:{},ext:[],gsent:{},neis:{on:false,atpt:'',sd:'',name:'',key:'',skip:'토요휴업일',last:''}};
-function load(){try{var j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&typeof j==='object'){if(Array.isArray(j.mine))S.mine=j.mine.filter(function(x){return typeof x==='string';});if(Array.isArray(j.custom))S.custom=j.custom.map(cleanCustom).filter(Boolean);if(j.links&&typeof j.links==='object'){['u1','u2','u3','cal'].forEach(function(k){if(typeof j.links[k]==='string')S.links[k]=j.links[k];});}if(Array.isArray(j.events))S.events=j.events.filter(function(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&typeof e.title==='string';}).map(function(e){return {id:String(e.id||Math.random().toString(36).slice(2)),date:e.date,end:/^\d{4}-\d{2}-\d{2}$/.test(e.end||'')?e.end:'',time:/^\d{2}:\d{2}$/.test(e.time||'')?e.time:'',rep:['week','month'].indexOf(e.rep)>=0?e.rep:'none',cat:['school','personal','family'].indexOf(e.cat)>=0?e.cat:'school',title:e.title.slice(0,80),memo:typeof e.memo==='string'?e.memo.slice(0,2000):''};});if(['school','personal','family'].indexOf(j.qcat)>=0)S.qcat=j.qcat;if(j.done&&typeof j.done==='object'&&!Array.isArray(j.done))S.done=j.done;if(j.gsent&&typeof j.gsent==='object'&&!Array.isArray(j.gsent))S.gsent=j.gsent;if(j.neis&&typeof j.neis==='object'){var nz=j.neis,str=function(v,n){return typeof v==='string'?v.slice(0,n):'';};S.neis={on:!!nz.on,atpt:str(nz.atpt,3).replace(/[^A-Z0-9]/g,''),sd:str(nz.sd,10).replace(/\D/g,''),name:str(nz.name,40),key:str(nz.key,64).replace(/[^A-Za-z0-9]/g,''),skip:typeof nz.skip==='string'?nz.skip.slice(0,200):'토요휴업일',last:str(nz.last,10)};}if(Array.isArray(j.ext))S.ext=j.ext.filter(function(x){return x&&typeof x.name==='string'&&x.name.trim();}).map(function(x){return {id:String(x.id||Math.random().toString(36).slice(2)),name:x.name.slice(0,40),num:String(x.num||'').slice(0,20),memo:String(x.memo||'').slice(0,60)};});}}catch(e){}}
+var S={mine:[],custom:[],links:{u1:'',u2:'',u3:'',cal:''},events:[],done:{},ext:[],gsent:{},hideSrc:{}};
+function load(){try{var j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&typeof j==='object'){if(Array.isArray(j.mine))S.mine=j.mine.filter(function(x){return typeof x==='string';});if(Array.isArray(j.custom))S.custom=j.custom.map(cleanCustom).filter(Boolean);if(j.links&&typeof j.links==='object'){['u1','u2','u3','cal'].forEach(function(k){if(typeof j.links[k]==='string')S.links[k]=j.links[k];});}if(Array.isArray(j.events))S.events=j.events.filter(function(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&typeof e.title==='string';}).map(function(e){return {id:String(e.id||Math.random().toString(36).slice(2)),date:e.date,end:/^\d{4}-\d{2}-\d{2}$/.test(e.end||'')?e.end:'',time:/^\d{2}:\d{2}$/.test(e.time||'')?e.time:'',rep:['week','month'].indexOf(e.rep)>=0?e.rep:'none',cat:['school','personal','family'].indexOf(e.cat)>=0?e.cat:'school',title:e.title.slice(0,80),memo:typeof e.memo==='string'?e.memo.slice(0,2000):''};});if(['school','personal','family'].indexOf(j.qcat)>=0)S.qcat=j.qcat;if(j.done&&typeof j.done==='object'&&!Array.isArray(j.done))S.done=j.done;if(j.gsent&&typeof j.gsent==='object'&&!Array.isArray(j.gsent))S.gsent=j.gsent;if(j.hideSrc&&typeof j.hideSrc==='object'&&!Array.isArray(j.hideSrc))S.hideSrc=j.hideSrc;if(Array.isArray(j.ext))S.ext=j.ext.filter(function(x){return x&&typeof x.name==='string'&&x.name.trim();}).map(function(x){return {id:String(x.id||Math.random().toString(36).slice(2)),name:x.name.slice(0,40),num:String(x.num||'').slice(0,20),memo:String(x.memo||'').slice(0,60)};});}}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function safeUrl(u){try{var x=new URL(String(u||'').trim());if(x.protocol==='https:'||x.protocol==='http:')return x.href;}catch(e){}return '';}
 function cleanCustom(c){if(!c||typeof c!=='object')return null;var url=safeUrl(c.url);var name=String(c.name||'').trim().slice(0,40);if(!url||!name)return null;var tag=CAT[c.tag]?c.tag:'기타';return {id:/^c-[\w-]{1,40}$/.test(c.id||'')?c.id:'c-'+Math.random().toString(36).slice(2,10),name:name,url:url,tag:tag,desc:String(c.desc||'').trim().slice(0,60)};}
@@ -604,7 +593,7 @@ function occursMine(e,s){
  return false;}
 function allItems(){
  var out=[],box=readBox();
- Object.keys(box).forEach(function(k){var s=box[k];if(!s||!Array.isArray(s.items))return;
+ Object.keys(box).forEach(function(k){var s=box[k];if(!s||!Array.isArray(s.items)||S.hideSrc[k])return;
   var color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:'#6B6670',name=String(s.name||k).slice(0,20),url=safeUrl(s.url);
   s.items.slice(0,3000).forEach(function(it){if(!it||!ISO.test(it.date))return;
    out.push({src:k,srcName:name,color:color,pill:soft(color,.62),url:url,id:String(it.id||''),date:it.date,end:ISO.test(it.end||'')?it.end:'',title:String(it.title||'').slice(0,120),kind:it.kind==='task'?'task':'event',sdone:!!it.done,rep:'none'});});});
@@ -654,6 +643,7 @@ function renderCalDlg(){
  var y=CM.getFullYear(),m=CM.getMonth(),t=todayS();
  $('calDlgTitle').textContent=y+'년 '+(m+1)+'월';
  $('gcalLink').href=safeUrl(S.links.cal)||'https://calendar.google.com/calendar/r';
+ renderRecv();
  var items=allItems();
  var srcs=$('calSrcs');srcs.textContent='';var seen={};
  Object.keys(CATC).map(function(c){return {src:'me',cat:c,srcName:CATC[c][0],pill:CATC[c][1]};}).concat(items).forEach(function(it){var lk=it.src==='me'?'me-'+it.cat:it.src;if(seen[lk])return;seen[lk]=1;srcs.appendChild(el('span',null,[el('span',{class:'chip',style:'background:'+it.pill+(it.src!=='me'?';box-shadow:inset 3px 0 0 '+it.color:'')}),it.srcName]));});
@@ -756,18 +746,38 @@ $('icsExport').addEventListener('click',function(){
  if(!n){showMsg('icsMsg','내보낼 일정이 없어요.',true);return;}
  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L.map(icsFold).join('\r\n')+'\r\n'],{type:'text/calendar;charset=utf-8'}));a.download='교무실_달력_'+todayS()+'.ics';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);
  showMsg('icsMsg','일정 '+n+'개를 .ics 파일로 내보냈어요.');});
+
+function writeBox(fn){try{var b=JSON.parse(localStorage.getItem(CALKEY)||'{}');if(!b||typeof b!=='object')b={};if(!b.sources||typeof b.sources!=='object')b.sources={};b.v=1;fn(b);localStorage.setItem(CALKEY,JSON.stringify(b));}catch(e){}}
+function whenS(iso){var d=new Date(iso);return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function renderRecv(){
+ var box=$('calRecv');box.textContent='';var src=readBox(),keys=Object.keys(src).filter(function(k){return src[k]&&Array.isArray(src[k].items);});
+ box.appendChild(el('b',{class:'h',text:'받은 일정'}));
+ if(!keys.length){box.appendChild(el('span',{class:'sub',text:'아직 받은 일정이 없어요. 강사 관리·학운위 도우미에서 [첫 화면 달력으로 보내기]를 누르거나, 그 도구에서 저장한 .ics 파일을 아래 [.ics 불러오기]로 넣으세요.'}));return;}
+ keys.forEach(function(k){var s=src[k],hid=!!S.hideSrc[k],color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:'#6B6670';
+  var row=el('div',{class:'ri'+(hid?' hid':'')},[el('span',{class:'chip',style:'background:'+soft(color,.62)+';box-shadow:inset 3px 0 0 '+color}),el('b',{text:String(s.name||k).slice(0,20)}),el('span',{text:s.items.length+'개'}),el('span',{class:'when',text:whenS(s.updated)+' 받음'+(hid?' · 숨김':'')})]);
+  row.appendChild(el('button',{type:'button',class:'pill mini',text:hid?'보이기':'숨기기',onclick:function(){if(hid)delete S.hideSrc[k];else S.hideSrc[k]=1;save();renderCalDlg();renderTodo();renderBadge();}}));
+  row.appendChild(el('button',{type:'button',class:'pill mini danger',text:'빼기',title:'첫 화면에서 이 도구의 일정을 지웁니다. 도구에서 [지금 보내기]를 누르면 다시 받습니다.',onclick:function(){writeBox(function(b){delete b.sources[k];});try{localStorage.setItem('homecal-off.'+k,'1');}catch(e){}delete S.hideSrc[k];save();renderCalDlg();renderTodo();renderBadge();}}));
+  var u=safeUrl(s.url);if(u)row.appendChild(el('a',{class:'pill mini',href:u,target:'_blank',rel:'noopener',text:'도구 열기 ↗'}));
+  box.appendChild(row);});
+}
 $('icsImportBtn').addEventListener('click',function(){$('icsFile').click();});
 function icsDate(v){var m=/(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2}))?/.exec(v||'');if(!m)return null;return {d:m[1]+'-'+m[2]+'-'+m[3],t:m[4]&&!/VALUE=DATE[;:]/.test(v)?m[4]+':'+m[5]:'',allday:!m[4]};}
 function icsCatOf(name,def){var n=String(name||'');if(/가족|family/i.test(n))return 'family';if(/개인|personal|private/i.test(n))return 'personal';if(/학교|school|work|업무/i.test(n))return 'school';return def;}
-function parseICS(txt){var lines=txt.replace(/\r\n[ \t]/g,'').replace(/\n[ \t]/g,'').split(/\r?\n/),evs=[],cur=null;
- lines.forEach(function(l){if(l==='BEGIN:VEVENT'){cur={};return;}if(l==='END:VEVENT'){if(cur&&cur.s)evs.push(cur);cur=null;return;}if(!cur)return;
+function parseICS(txt){var lines=txt.replace(/\r\n[ \t]/g,'').replace(/\n[ \t]/g,'').split(/\r?\n/),evs=[],cur=null;evs.meta={};
+ lines.forEach(function(l){if(!cur){var mm=/^X-SCHOOL-(SOURCE|NAME|COLOR):(.*)$/.exec(l);if(mm){evs.meta[mm[1].toLowerCase()]=mm[2].replace(/\\([,;\\])/g,'$1');return;}}if(l==='BEGIN:VEVENT'){cur={};return;}if(l==='END:VEVENT'){if(cur&&cur.s)evs.push(cur);cur=null;return;}if(!cur)return;
   var i=l.indexOf(':');if(i<0)return;var k=l.slice(0,i),v=l.slice(i+1),base=k.split(';')[0];
-  if(base==='DTSTART'){cur.s=icsDate(k+':'+v);}else if(base==='DTEND'){cur.e=icsDate(k+':'+v);}else if(base==='SUMMARY'){cur.title=v.replace(/\\n/g,' ').replace(/\\([,;\\])/g,'$1');}else if(base==='DESCRIPTION'){cur.memo=v.replace(/\\n/gi,'\n').replace(/\\([,;\\])/g,'$1');}else if(base==='CATEGORIES'){cur.cat=v.replace(/\\([,;\\])/g,'$1');}else if(base==='RRULE'){cur.rep=/FREQ=WEEKLY/.test(v)?'week':/FREQ=MONTHLY/.test(v)?'month':'none';}});
+  if(base==='DTSTART'){cur.s=icsDate(k+':'+v);}else if(base==='DTEND'){cur.e=icsDate(k+':'+v);}else if(base==='SUMMARY'){cur.title=v.replace(/\\n/g,' ').replace(/\\([,;\\])/g,'$1');}else if(base==='DESCRIPTION'){cur.memo=v.replace(/\\n/gi,'\n').replace(/\\([,;\\])/g,'$1');}else if(base==='CATEGORIES'){cur.cat=v.replace(/\\([,;\\])/g,'$1');}else if(base==='RRULE'){cur.rep=/FREQ=WEEKLY/.test(v)?'week':/FREQ=MONTHLY/.test(v)?'month':'none';}else if(base==='X-SCHOOL-ID'){cur.sid=v.replace(/\\([,;\\])/g,'$1');}else if(base==='X-SCHOOL-KIND'){cur.kind=v==='task'?'task':'event';}else if(base==='X-SCHOOL-DONE'){cur.done=v==='1';}});
  return evs;}
 $('icsFile').addEventListener('change',function(){var f=this.files&&this.files[0];this.value='';if(!f)return;
  if(f.size>3e6){showMsg('icsMsg','파일이 너무 커요.',true);return;}
  var defCat=catOf($('icsCat').value),cnt={school:0,personal:0,family:0};
  var r=new FileReader();r.onload=function(){var evs=parseICS(String(r.result)),have={},add=0;
+  var ms=evs.meta&&/^[\w-]{1,30}$/.test(evs.meta.source||'')?evs.meta.source:'';
+  if(ms){var its=[];evs.slice(0,3000).forEach(function(v,i){if(!v.s||!v.title)return;var en='';if(v.e&&v.e.d>v.s.d){en=v.s.allday?addD(v.e.d,-1):v.e.d;if(en<=v.s.d)en='';}its.push({id:String(v.sid||('i'+i)).slice(0,60),date:v.s.d,end:en,title:v.title.slice(0,120),kind:v.kind||'event',done:!!v.done});});
+   var nm=String(evs.meta.name||ms).slice(0,20),had=!!readBox()[ms];
+   writeBox(function(b){b.sources[ms]={name:nm,color:/^#[0-9a-f]{6}$/i.test(evs.meta.color||'')?evs.meta.color:'#6B6670',url:'',updated:new Date().toISOString(),items:its};});
+   try{localStorage.removeItem('homecal-off.'+ms);}catch(e){}delete S.hideSrc[ms];save();renderCalDlg();renderTodo();renderBadge();
+   showMsg('icsMsg',nm+' 일정 '+its.length+'개를 받은 일정으로 넣었어요.'+(had?' (전에 받은 '+nm+' 일정은 새것으로 바꿈)':''));return;}
   S.events.forEach(function(e){have[e.date+'|'+e.title]=1;});
   evs.slice(0,3000).forEach(function(v){if(!v.s||!v.title)return;var title=v.title.slice(0,80),d=v.s.d,en='';
    if(v.e&&v.e.d>d){en=v.s.allday?addD(v.e.d,-1):v.e.d;if(en<=d)en='';}
@@ -833,94 +843,9 @@ $('exFile').addEventListener('change',function(){var f=this.files&&this.files[0]
   if(!add&&!upd)showMsg('exMsg','불러올 내선을 찾지 못했어요. 첫 줄에 ‘이름’과 ‘내선’ 제목이 있는지 확인해 주세요.',true);
   else showMsg('exMsg','불러왔어요. 새로 '+add+'개, 번호 바뀜 '+upd+'개'+(skip?' (이름이나 번호가 빈 줄 '+skip+'개는 건너뜀)':'')+'.');
  }).catch(function(e){showMsg('exMsg',e&&e.message?e.message:'엑셀 파일을 읽지 못했어요.',true);});});
-
-// ================= 나이스 학사일정 (v1.8) =================
-// 교육정보 개방 포털 학사일정 API(SchoolSchedule)에서 우리 학교 일정을 받아 일정 우체통의 'neis' 칸에 넣는다.
-// 학교 코드·인증키는 이 브라우저 설정(school-desk-v1)에만 저장한다. 이어진 같은 일정(방학 등)은 한 막대로 묶는다.
-var NEIS_API='https://open.neis.go.kr/hub/';
-function neisCall(svc,params){
- var q=new URLSearchParams(Object.assign({Type:'json',pIndex:'1',pSize:S.neis.key?'1000':'5'},params));if(S.neis.key)q.set('KEY',S.neis.key);
- return fetch(NEIS_API+svc+'?'+q.toString()).catch(function(){throw new Error('나이스에 연결하지 못했어요. 인터넷이 막힌 PC(업무망)에서는 불러올 수 없어요.');})
- .then(function(r){if(!r.ok)throw new Error('나이스 응답 오류('+r.status+')');return r.json();})
- .then(function(j){
-  if(j&&j.RESULT){if(j.RESULT.CODE==='INFO-200')return {rows:[],total:0};throw new Error(String(j.RESULT.MESSAGE||'나이스 오류')+' ('+j.RESULT.CODE+')');}
-  var b=j&&j[svc];if(!Array.isArray(b))throw new Error('나이스 응답을 읽지 못했어요.');
-  var head=(b[0]&&b[0].head)||[],res=head.find(function(h){return h.RESULT;}),tot=head.find(function(h){return h.list_total_count!=null;});
-  if(res&&res.RESULT.CODE!=='INFO-000')throw new Error(String(res.RESULT.MESSAGE)+' ('+res.RESULT.CODE+')');
-  return {rows:(b[1]&&Array.isArray(b[1].row))?b[1].row:[],total:tot?+tot.list_total_count:0};});
-}
-function neisSkipList(){return String(S.neis.skip||'').split(/[,，]/).map(function(x){return x.trim();}).filter(Boolean);}
-function neisMerge(rows){
- var skip=neisSkipList(),list=[];
- rows.forEach(function(r){var d=String(r.AA_YMD||''),t=String(r.EVENT_NM||'').trim();if(!/^\d{8}$/.test(d)||!t)return;
-  if(skip.some(function(w){return t.indexOf(w)>=0;}))return;
-  list.push({d:d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8),t:t.slice(0,60),k:String(r.SBTR_DD_SC_NM||'')});});
- list.sort(function(a,b){return a.d.localeCompare(b.d)||a.t.localeCompare(b.t);});
- var out=[],seen={};
- list.forEach(function(x){
-  if(seen[x.d+'|'+x.t])return;seen[x.d+'|'+x.t]=1;
-  var last=null;for(var i=out.length-1;i>=0;i--){if(out[i].title===x.t){last=out[i];break;}}
-  var g=last?diff(x.d,last.end||last.date):0;
-  if(last&&g>=1&&g<=4){last.end=x.d;return;}   // 주말·공휴일로 4일까지 끊겨도 같은 일정이면 이어 붙임(겨울방학 등)
-  out.push({id:'n'+x.d.replace(/-/g,'')+'-'+out.length,date:x.d,title:x.t,kind:'event'});
- });
- out.forEach(function(o){if(o.end===o.date)delete o.end;});
- return out;
-}
-function neisRanges(){
- // 학년도(3월~다음 해 2월). 12~2월에는 다음 학년도 일정도 함께 받음
- var t=new Date(),m=t.getMonth(),y=m<2?t.getFullYear()-1:t.getFullYear(),r=[[y+'0301',(y+1)+'0228']];
- if(m>=11||m<2)r.push([(y+1)+'0301',(y+2)+'0228']);
- return r;
-}
-function writeNeisBox(items){
- try{var b={};try{b=JSON.parse(localStorage.getItem(CALKEY)||'{}')||{};}catch(e){b={};}
-  if(!b.sources||typeof b.sources!=='object')b.sources={};
-  if(items)b.sources.neis={name:'학사일정',color:'#2E9C8F',url:'',updated:new Date().toISOString(),items:items};else delete b.sources.neis;
-  b.v=1;localStorage.setItem(CALKEY,JSON.stringify(b));}catch(e){}
- renderLegend();renderTodo();renderBadge();if($('calDlg').open)renderCalDlg();
-}
-var neisBusy=false;
-function neisFetch(manual){
- if(neisBusy||!S.neis.on||!S.neis.sd)return;
- neisBusy=true;if(manual)showMsg('nsMsg','학사일정을 받는 중…');
- Promise.all(neisRanges().map(function(r){return neisCall('SchoolSchedule',{ATPT_OFCDC_SC_CODE:S.neis.atpt,SD_SCHUL_CODE:S.neis.sd,AA_FROM_YMD:r[0],AA_TO_YMD:r[1]});}))
- .then(function(all){
-  var rows=[],total=0;all.forEach(function(x){rows=rows.concat(x.rows);total+=x.total;});
-  var items=neisMerge(rows);writeNeisBox(items);S.neis.last=todayS();save();
-  if(manual)showMsg('nsMsg','학사일정 '+items.length+'개를 달력에 넣었어요'+(S.neis.key?'.':'. 인증키가 없어 '+rows.length+'건만 받았어요(전체 '+total+'건). 인증키를 넣으면 전부 와요.'));
- }).catch(function(e){if(manual)showMsg('nsMsg',e.message,true);})
- .then(function(){neisBusy=false;});
-}
-function renderNeis(){
- $('nsKey').value=S.neis.key||'';$('nsSkip').value=S.neis.skip||'';
- $('nsPicked').textContent=S.neis.on&&S.neis.sd?'고른 학교: '+S.neis.name+(S.neis.last?' · 마지막으로 받은 날 '+S.neis.last:''):'아직 학교를 고르지 않았어요.';
- $('nsOff').hidden=!S.neis.on;$('nsFetch').disabled=!S.neis.sd;
-}
-$('nsKey').addEventListener('change',function(){S.neis.key=$('nsKey').value.replace(/[^A-Za-z0-9]/g,'').slice(0,64);$('nsKey').value=S.neis.key;save();if(S.neis.on)neisFetch(true);});
-$('nsSkip').addEventListener('change',function(){S.neis.skip=$('nsSkip').value.slice(0,200);save();if(S.neis.on)neisFetch(true);});
-$('nsName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('nsSearch').click();}});
-$('nsSearch').addEventListener('click',function(){
- var n=$('nsName').value.trim(),box=$('nsSchools');box.textContent='';
- if(n.length<2){showMsg('nsMsg','학교 이름을 두 글자 이상 넣어 주세요.',true);return;}
- showMsg('nsMsg','학교를 찾는 중…');
- neisCall('schoolInfo',{SCHUL_NM:n}).then(function(res){
-  if(!res.rows.length){showMsg('nsMsg','그 이름의 학교를 찾지 못했어요.',true);return;}
-  showMsg('nsMsg','우리 학교를 누르세요.'+(res.total>res.rows.length?' (인증키가 없어 '+res.rows.length+'곳만 보여요. 이름을 더 길게 넣어 보세요.)':''));
-  res.rows.forEach(function(sc){
-   var b=el('button',{type:'button',class:'pill',style:'justify-content:flex-start;text-align:left;width:100%'},[String(sc.SCHUL_NM||''),el('small',{style:'margin-left:8px;font-weight:400',text:String(sc.ATPT_OFCDC_SC_NM||'')+' · '+String(sc.ORG_RDNMA||'')})]);
-   b.addEventListener('click',function(){
-    S.neis.on=true;S.neis.atpt=String(sc.ATPT_OFCDC_SC_CODE||'').replace(/[^A-Z0-9]/g,'').slice(0,3);S.neis.sd=String(sc.SD_SCHUL_CODE||'').replace(/\D/g,'').slice(0,10);S.neis.name=String(sc.SCHUL_NM||'').slice(0,40);S.neis.last='';
-    save();box.textContent='';renderNeis();neisFetch(true);});
-   box.appendChild(b);});
- }).catch(function(e){showMsg('nsMsg',e.message,true);});
-});
-$('nsFetch').addEventListener('click',function(){if(!S.neis.sd)return;S.neis.on=true;save();renderNeis();neisBusy=false;neisFetch(true);});
-$('nsOff').addEventListener('click',function(){S.neis.on=false;S.neis.last='';save();writeNeisBox(null);renderNeis();showMsg('nsMsg','학사일정을 껐어요. 달력에서 뺐어요.');});
 window.addEventListener('storage',function(e){if(e.key===CALKEY){renderTodo();renderBadge();if($('calDlg').open)renderCalDlg();}else if(e.key===KEY){load();renderAll();}});
 
-load();pruneDone();$('qaddCat').value=S.qcat||'school';renderLegend();renderAll();renderNeis();
-if(S.neis.on&&S.neis.last!==todayS())setTimeout(function(){neisFetch(false);},800);   // 하루에 한 번 새로 받기
+load();pruneDone();$('qaddCat').value=S.qcat||'school';renderLegend();renderAll();
 })();
 </script>
 </body>
