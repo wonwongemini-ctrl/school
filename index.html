@@ -273,7 +273,7 @@ footer p{margin:0}
   <div class="clist" id="nsSchools" style="margin-top:8px"></div>
   <p class="sub" id="nsPicked" style="font-size:14px;font-weight:700;margin-top:8px"></p>
   <div class="grid-form">
-    <label class="field">인증키<input type="text" id="nsKey" maxlength="64" placeholder="개방 포털 인증키" autocomplete="off" spellcheck="false"><small>없으면 몇 건만 와요. open.neis.go.kr 로그인 → 인증키 신청(무료). 이 브라우저에만 저장하고 목록 내보내기에는 넣지 않아요.</small></label>
+    <label class="field">인증키<input type="text" id="nsKey" maxlength="64" placeholder="개방 포털 인증키" autocomplete="off" spellcheck="false"><small>없으면 앞으로 12주의 평일(월~금) 일정만 주마다 받아요(한 주 5건까지). 넣으면 학년도 전체를 한 번에 받아요. <a href="https://open.neis.go.kr" target="_blank" rel="noopener">open.neis.go.kr</a> 로그인 → 인증키 신청(무료). 이 브라우저에만 저장하고 목록 내보내기에는 넣지 않아요.</small></label>
     <label class="field">빼고 볼 일정 (쉼표로 나눠 적기)<input type="text" id="nsSkip" maxlength="200" autocomplete="off"><small>이름에 이 글자가 들어간 일정은 달력에 넣지 않아요.</small></label>
   </div>
   <div class="row" style="margin-top:10px">
@@ -341,7 +341,7 @@ footer p{margin:0}
 </div>
 
 <footer>
-  <p>교무실 업무 도우미 v2.0 · 2026-10-31 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
+  <p>교무실 업무 도우미 v2.1 · 2026-10-31 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
   <p>만든 사람: <a href="https://blog.naver.com/oderobong" target="_blank" rel="noopener">blog.naver.com/oderobong</a> · 오류 제보·의견은 블로그 댓글로</p>
 </footer>
 </div>
@@ -895,6 +895,14 @@ function neisMerge(rows){
  out.forEach(function(o){if(o.end===o.date)delete o.end;});
  return out;
 }
+function neisWeekRanges(n){
+ // 인증키가 없으면 한 번에 5건만 와서 토요휴업일이 자리를 다 차지함 → 앞으로 n주를 월~금 한 주씩 나눠 받음
+ var t=new Date(),d=new Date(t.getFullYear(),t.getMonth(),t.getDate()),dow=d.getDay();
+ if(dow===0)d.setDate(d.getDate()+1);else if(dow===6)d.setDate(d.getDate()+2);
+ var out=[];for(var i=0;i<n;i++){var a=new Date(d);var mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()+6)%7)+i*7);var st=i===0?a:mon,fr=new Date(mon);fr.setDate(mon.getDate()+4);
+  out.push([ymd(st).replace(/-/g,''),ymd(fr).replace(/-/g,'')]);}
+ return out;
+}
 function neisRanges(){
  // 학년도(3월~다음 해 2월). 12~2월에는 다음 학년도 일정도 함께 받음
  var t=new Date(),m=t.getMonth(),y=m<2?t.getFullYear()-1:t.getFullYear(),r=[[y+'0301',(y+1)+'0228']];
@@ -909,16 +917,30 @@ function writeNeisBox(items){
  renderLegend();renderTodo();renderBadge();if($('calDlg').open)renderCalDlg();
 }
 var neisBusy=false;
+var NEIS_WEEKS=12;
 function neisFetch(manual){
  if(neisBusy||!S.neis.on||!S.neis.sd)return;
  neisBusy=true;if(manual)showMsg('nsMsg','학사일정을 받는 중…');
- Promise.all(neisRanges().map(function(r){return neisCall('SchoolSchedule',{ATPT_OFCDC_SC_CODE:S.neis.atpt,SD_SCHUL_CODE:S.neis.sd,AA_FROM_YMD:r[0],AA_TO_YMD:r[1]});}))
- .then(function(all){
-  var rows=[],total=0;all.forEach(function(x){rows=rows.concat(x.rows);total+=x.total;});
-  var items=neisMerge(rows);writeNeisBox(items);S.neis.last=todayS();save();
-  if(manual)showMsg('nsMsg','학사일정 '+items.length+'개를 달력에 넣었어요'+(S.neis.key?'.':'. 인증키가 없어 '+rows.length+'건만 받았어요(전체 '+total+'건). 인증키를 넣으면 전부 와요.'));
+ var q=function(r){return neisCall('SchoolSchedule',{ATPT_OFCDC_SC_CODE:S.neis.atpt,SD_SCHUL_CODE:S.neis.sd,AA_FROM_YMD:r[0],AA_TO_YMD:r[1]});};
+ var job;
+ if(S.neis.key){
+  job=Promise.all(neisRanges().map(q)).then(function(all){var rows=[];all.forEach(function(x){rows=rows.concat(x.rows);});return {rows:rows,weeks:0,stop:''};});
+ }else{
+  // 한 주씩 차례로 (나이스에 부담을 주지 않게 잠깐씩 쉬며). 중간에 막히면 그때까지 받은 것만 씀
+  var ranges=neisWeekRanges(NEIS_WEEKS),rows=[],done=0;
+  job=ranges.reduce(function(p,r){return p.then(function(st){if(st.stop)return st;
+    return q(r).then(function(x){rows=rows.concat(x.rows);done++;if(manual)showMsg('nsMsg','학사일정을 받는 중… ('+done+'/'+ranges.length+'주)');return new Promise(function(ok){setTimeout(function(){ok(st);},150);});})
+     .catch(function(e){if(!done)throw e;return {stop:e.message};});});},Promise.resolve({stop:''}))
+   .then(function(st){return {rows:rows,weeks:done,stop:st.stop};});
+ }
+ job.then(function(res){
+  var items=neisMerge(res.rows);
+  if(!S.neis.key&&!items.length&&res.weeks===0)throw new Error('학사일정을 받지 못했어요.');
+  writeNeisBox(items);S.neis.last=todayS();save();
+  if(manual)showMsg('nsMsg',S.neis.key?'학사일정 '+items.length+'개를 달력에 넣었어요 (학년도 전체).':
+   '인증키 없이 앞으로 '+res.weeks+'주 평일 일정 '+items.length+'개를 받았어요'+(res.stop?' (중간에 멈춤: '+res.stop+')':'')+'. 날마다 처음 열 때 다시 받아 앞날이 채워져요. 인증키를 넣으면 학년도 전체를 한 번에 받아요.');
  }).catch(function(e){if(manual)showMsg('nsMsg',e.message,true);})
- .then(function(){neisBusy=false;});
+ .then(function(){neisBusy=false;renderNeis();});
 }
 function renderNeis(){
  $('nsKey').value=S.neis.key||'';$('nsSkip').value=S.neis.skip||'';
