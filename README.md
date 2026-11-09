@@ -3,7 +3,7 @@
 | 프로그램 | 언제 | 바로 쓰기 | 설명 |
 |---|---|---|---|
 | **학운위 구성 도우미** v2.7.0 | 매년 2~4월(위원 선출·구성) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/gusung.html | [블로그](https://blog.naver.com/oderobong/224438738839) |
-| **학운위 운영업무 도우미** v2.4.0 | 연중(회의 개최·진행·결과) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/unyeong.html | [사용설명서(노션)](https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc) · [블로그](https://blog.naver.com/oderobong/224428377136) |
+| **학운위 운영업무 도우미** v2.4.1 | 연중(회의 개최·진행·결과) | https://wonwongemini-ctrl.github.io/school/hakwoonwi/unyeong.html | [사용설명서(노션)](https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc) · [블로그](https://blog.naver.com/oderobong/224428377136) |
 
 - 학운위 첫 화면: https://wonwongemini-ctrl.github.io/school/hakwoonwi/
 - 운영업무 도우미는 예전 주소(https://wonwongemini-ctrl.github.io/my-calculators/schoolboard.html)에서도 같은 버전으로 열립니다. 두 주소는 같은 사이트라 입력값도 공유됩니다.
