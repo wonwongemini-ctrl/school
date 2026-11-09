@@ -2419,9 +2419,10 @@ swap('not_a6', () => [crimeConsentForm()], {}); swap('loc_a4', () => [crimeConse
 </script>
 <script>
 /* ===== UI v2 ===== */
-const APP_VERSION = '2.7.0';
-const APP_BUILD = '2026-10-30';
+const APP_VERSION = '2.7.1';
+const APP_BUILD = '2026-11-09';
 const CHANGELOG = [
+  ['2.7.1', '2026-11-09', ['날짜 칸: 20260301처럼 숫자를 이어 치면 연도 4자리 뒤 월·일로 넘어감(연도가 6자리로 들어가던 문제)']],
   ['2.7.0', '2026-10-30', ['일정 메뉴의 기안 소업무 일정과 후보 등록·선거공보·지역위원 추천 기간을 같은 사이트의 \'교무실 업무 도우미\' 첫 화면 통합 달력·오늘 할 일에도 보냄(이 브라우저 안에서만, 인터넷으로 보내지 않음). 일정 메뉴에서 끌 수 있음. 단계 \'완료\'를 누르면 첫 화면에도 끝난 일로 표시']],
   ['2.6.5', '2026-10-12', ['점검 결과(HWPX)·세부 일정표의 표: 쪽 중간에서 시작해 다음 쪽으로 넘어가도 표가 통째로 밀리지 않고 셀 단위로 나뉘도록 "글자처럼 취급" 해제 + 자동으로 나뉜 표의 경계선 설정 + 제목 줄 반복']],
   ['2.6.4', '2026-10-12', ['HWPX 표가 한 쪽보다 길면 "글자처럼 취급"을 해제해 쪽 경계에서 셀 단위로 나뉘게 하고, "자동으로 나뉜 표의 경계선 설정"을 켬(제목 줄 자동 반복 유지). 한 쪽 안에 들어가는 표는 그대로']],
@@ -2535,6 +2536,11 @@ function load() {
 function merge(a, b) { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) merge(a[k], b[k]); else a[k] = b[k]; } return a; }
 let saveT;
 function save() { S.meta.updated = new Date().toISOString(); clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { } publishCal(); }, 250); }
+/* ---------- 날짜 칸 (v2.7.1): 연도가 6자리까지 들어가는 문제 → 범위를 정해 연도를 4자리로 제한(강사 관리·운영 도우미와 같은 방법). 나중에 생기는 칸도 누를 때 맞춘다 ---------- */
+function limitDate(el) { if (el && el.tagName === 'INPUT' && (el.type === 'date' || el.type === 'month') && !el.max) { if (!el.min) el.min = el.type === 'month' ? '1900-01' : '1900-01-01'; el.max = el.type === 'month' ? '2099-12' : '2099-12-31'; } }
+document.addEventListener('focusin', e => limitDate(e.target), true);
+document.addEventListener('pointerdown', e => limitDate(e.target), true);
+document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('input[type=date],input[type=month]').forEach(limitDate));
 /* ---------- 일정 우체통 (v2.7.0) ----------
    같은 사이트(wonwongemini-ctrl.github.io)의 '교무실 업무 도우미' 첫 화면이 통합 달력·오늘 할 일에 보여 준다.
    이 브라우저 저장 공간 'school-cal-v1'의 '학운위 구성' 칸(hakwoonwi-setup)만 덮어쓴다. 인터넷으로는 아무것도 보내지 않는다.

@@ -529,6 +529,8 @@ table.ag td .inp[data-f=title]{min-width:170px}
 .cal .cbar.cs{border-left:0;border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}.cal .cbar.ce{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
 .cal .cbar.main{background:var(--c);color:#fff;font-weight:700}
 .cal .cbar.faint{opacity:.6;border-left-style:dashed}
+.cal .cbar[data-dk]{cursor:grab;touch-action:none}.cal .cbar.dragging{opacity:.45;cursor:grabbing}
+.cal .cd.drop span{outline:2px dashed #2383e2;outline-offset:-1px;background:color-mix(in srgb,#2383e2 14%,transparent)}
 .cal .clg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;color:var(--muted);font-size:11px}.cal .clg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}.cal .clg i.fa{background:#9aa0a6;opacity:.6}
 .cal .cnote{margin:6px 0 0;color:var(--muted);font-size:11px}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .cal .cbar.main{background:#e6e9f0;color:#1f2a44} }
@@ -701,6 +703,7 @@ table.ag tr.flash td{animation:ikFlash 3s ease-out}
         <label class="f"><span>꼬리 표어</span><input type="text" id="s_sloganBottom" placeholder="공문 꼬리 표어 (없으면 비움)"></label>
         <label class="f"><span>학부모 부담경비 의견 수렴 관련 근거</span><input type="text" id="s_feeLaw"></label>
         <label class="f"><span>긴급 회의 근거 법령 (공문 행정사항·공고 비고)</span><input type="text" id="s_urgentLaw"></label>
+        <label class="f"><span>결과 이송 기한: 회의 후 며칠 이내 (학교 운영위원회 규정 · 비우면 7일)</span><input type="number" id="s_xferDays" min="1" max="30" placeholder="7" inputmode="numeric"><small>결과 홍보·회의록 공개는 조례(회의종료 후 7일 이내)로 정해져 있어 바꿀 수 없습니다.</small></label>
       </details>
       <details class="more">
         <summary>메시지에 쓸 문구</summary>
@@ -998,8 +1001,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.2", date:"2026-11-09"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.5.0", date:"2026-11-09"};
 const CHANGELOG = [
+  {v:"2.5.0", date:"2026-11-09", items:[
+    "결과 단계를 둘로 나눔: 결과 이송 마감(학교 운영위원회 규정, 학교 정보에서 '회의 후 ○일' 입력 · 비우면 7일)과 결과 홍보·회의록 공개 마감(회의종료 후 7일 이내, 경기도립 학교운영위원회 설치·운영 조례 제15조②)",
+    "점검: 결과 이송은 학교 기한으로, 결과 홍보는 회의 후 7일 이내로 따로 확인. 이송이 늦어 홍보 기한을 맞추기 어려우면 미리 알림",
+    "이달 일정 달력: 막대를 마우스로 끌어 날짜를 옮김(회의·공고·방청 신청·부담경비 의견수렴·결과 이송·결과 홍보). 옮긴 날짜는 각 화면의 날짜 칸과 첫 화면 달력에 바로 반영. 안건 접수 마감은 회의일을 따라감",
+    "방청 신청·부담경비 의견수렴 기간을 직접 고치면 회의별로 기억(고치지 않은 날은 공고일·회의일을 따라감)",
+    "날짜 칸: 20260301처럼 숫자를 이어 치면 연도 4자리 뒤 월·일로 넘어감(연도가 6자리로 들어가던 문제)"
+  ]},
   {v:"2.4.2", date:"2026-11-09", items:[
     "일정 기준을 바꿈: 안건 접수 마감 = 회의 10일 전, (결재·배부 준비 9일 전), 공고·안건 배부 마감 = 회의 8일 전. 안건이 7일 전까지 위원에게 도착해야 하고 '7일 전까지'는 회의일 전날부터 거꾸로 세므로 8일 전에 보냄",
     "공고일: 처음 접수한 날을 공고일로 잡던 것을 고침. 기본은 공고 마감일(회의 8일 전), 앞당겨 공고하면 회의 개최의 '공고·시행일'에 넣은 날을 저장해 씀",
@@ -1103,6 +1113,7 @@ const DEFAULTS = {
   s_feeLaw:"경기도립학교 운영위원회 설치·운영 조례 제15조의2(의견 수렴 등)",
   s_feeWhere:"학교누리집 학교운영위원회 게시판 게시", s_feeHow:"교무실 직접 방문 제출",
   s_urgentLaw:"「초·중등교육법 시행령」 제59조의2제2항 단서",
+  s_xferDays:"",
   np_w:"250", np_h:"85", np_style:"garland", np_font:"serif",
   ix_w:"13", ix_h:"9",
   lb_cols:"2", lb_rows:"7", lb_w:"99.1", lb_h:"38.1", lb_mt:"15.1", lb_ml:"4.65", lb_gx:"2.5", lb_gy:"0"
@@ -2053,6 +2064,7 @@ function selectMeeting(key){
   $("f_start").value = nd ? ymd(addDays(nd,1)) : "";
   $("f_end").value = ymd(addDays(md,-1));
   $("f_endTime").value = "16:40";
+  ["m_reqStart","m_reqEnd","f_start","f_end"].forEach(id => { if(F[id]) $(id).value = F[id]; });   // 직접 고친 기간
   $("o_date").value = ymd(md); $("o_time").value = $("m_time").value;
   if(!$("m_audience").value) $("m_audience").value = "학부모, 교직원, 지역인사, 학생";
   if(!$("m_method").value) $("m_method").value = "방청 신청서 제출 시 별도 안내";
@@ -2424,6 +2436,10 @@ const fMD = d => d ? `${d.getMonth()+1}. ${d.getDate()}.(${WD[d.getDay()]})` : "
 const NOTICE_DAYS = 8, INTAKE_DAYS = 10;   // 공고·안건 배부 마감 = 회의 8일 전(7일 전까지 도착), 안건 접수 마감 = 10일 전(9일 전 결재·배부 준비)
 const noticeDue = md => md ? addDays(md, -NOTICE_DAYS) : null;
 const intakeDue = md => md ? addDays(md, -INTAKE_DAYS) : null;
+const PROMO_DAYS = 7;   // 경기도립 학교운영위원회 설치·운영 조례 제15조②: 회의록은 회의종료 후 7일 이내 공개(심의결과 홍보도 같은 기한으로 봄)
+function xferDays(){ const n = parseInt((($("s_xferDays")||{}).value||""), 10); return n > 0 && n <= 30 ? n : PROMO_DAYS; }   // 결과 이송 기한: 학교 운영위원회 규정
+const xferDue = md => md ? addDays(md, xferDays()) : null;
+const promoDue = md => md ? addDays(md, PROMO_DAYS) : null;
 const noticeOf = (md, saved, urgent) => parseYmd(saved) || (urgent ? null : noticeDue(md));
 function curNotice(){ if(!S.cur) return null; return noticeOf(parseYmd($("m_date").value) || S.cur.date, S.mt && S.mt.dates.open, typeNow()==="긴급임시회"); }
 const noticeSaved = () => !!(S.mt && parseYmd(S.mt.dates.open));
@@ -2431,7 +2447,8 @@ const noticeSaved = () => !!(S.mt && parseYmd(S.mt.dates.open));
 function syncNotice(){
   if(!S.cur) return;
   const nd = curNotice(), prev = S.cur.openDate ? ymd(addDays(S.cur.openDate, 1)) : "";
-  ["m_reqStart","f_start"].forEach(id => { const el = $(id); if(el && (!el.value || el.value===prev)) el.value = nd ? ymd(addDays(nd, 1)) : ""; });
+  const F = (S.mt && S.mt.f) || {};
+  ["m_reqStart","f_start"].forEach(id => { const el = $(id); if(el && !F[id]) el.value = nd ? ymd(addDays(nd, 1)) : ""; });   // 직접 고친 날(F에 기억)은 그대로
   S.cur.openDate = nd;
   if(S.mode==="open") $("m_noticeDate").value = ymd(nd);
   noticeHint();
@@ -2463,8 +2480,8 @@ function stepDate(stepId){
   }
   if(stepId==="meet") return {t: md ? fMD(md) : "미정", bad:false};
   if(stepId==="result"){
-    const r = parseYmd(S.mt && S.mt.dates.result) || (md ? addDays(md,1) : null);
-    return {t: r ? fMD(r) : "미정", bad: !!(r && md && dayDiff(md, r) > 7)};
+    const r = parseYmd(S.mt && S.mt.dates.result) || xferDue(md), pr = parseYmd(S.mt && S.mt.dates.promo);
+    return {t: r ? fMD(r) : "미정", bad: !!(md && ((r && r > xferDue(md)) || (pr && pr > promoDue(md))))};
   }
   return {t:"", bad:false};
 }
@@ -3579,14 +3596,15 @@ function calEvents(){
     const md = parseYmd($("m_date").value) || S.cur.date;
     const nd = curNotice();
     const urgent = typeNow()==="긴급임시회";
-    if(md && !urgent) add(intakeDue(md), null, "안건 접수 마감", "#e5484d", "intake:main");
-    if(nd) add(nd, null, noticeSaved() ? "공고·안건 발송" : "공고 마감", "#2383e2", "prep:open");
+    if(md && !urgent) add(intakeDue(md), null, "안건 접수 마감", "#e5484d", "intake:main", {dk:"intake"});
+    if(nd) add(nd, null, noticeSaved() ? "공고·안건 발송" : "공고 마감", "#2383e2", "prep:open", {dk:"notice"});
     const rs = parseYmd($("m_reqStart").value), re = parseYmd($("m_reqEnd").value);
-    if(rs && re && rs <= re) add(rs, re, "방청 신청", "#30a46c", "prep:open");
-    if((S.agendaState||[]).some(a => a.fee)){ const fs = parseYmd($("f_start").value), fe = parseYmd($("f_end").value); if(fs && fe && fs <= fe) add(fs, fe, "부담경비 의견수렴", "#f5a524", "prep:open"); }
-    if(md) add(md, null, `제${S.cur.hoe}회 회의`, "#1f2a44", "meet:main", {main:1});
-    const r = parseYmd(S.mt && S.mt.dates.result) || (md ? addDays(md, 1) : null);
-    if(r && md) add(r, addDays(md, 7) > r ? addDays(md, 7) : r, "결과 이송·홍보", "#8e4ec6", "result:main");
+    if(rs && re && rs <= re) add(rs, re, "방청 신청", "#30a46c", "prep:open", {dk:"req"});
+    if((S.agendaState||[]).some(a => a.fee)){ const fs = parseYmd($("f_start").value), fe = parseYmd($("f_end").value); if(fs && fe && fs <= fe) add(fs, fe, "부담경비 의견수렴", "#f5a524", "prep:open", {dk:"fee"}); }
+    if(md) add(md, null, `제${S.cur.hoe}회 회의`, "#1f2a44", "meet:main", {main:1, dk:"meet"});
+    const rd = parseYmd(S.mt && S.mt.dates.result), pd = parseYmd(S.mt && S.mt.dates.promo);
+    if(md){ add(rd || xferDue(md), null, rd ? "결과 이송" : "결과 이송 마감", "#8e4ec6", "result:main", {dk:"result"});
+            add(pd || promoDue(md), null, pd ? "결과 홍보·회의록 공개" : "결과 홍보 마감", "#c2298a", "result:promo", {dk:"promo"}); }
   }
   S.meetings.forEach(m => { if(m.date && (!S.cur || m.key !== S.cur.key)) add(m.date, null, `제${m.hoe}회 회의`, "#9aa0a6", "", {faint:1, key:m.key}); });
   return ev;
@@ -3605,21 +3623,56 @@ function renderCal(){
       return {...e, k:ev.indexOf(e), a, b, cs:e.s < ws, ce:e.e > we};
     });
     const lanes = []; segs.sort((x, y) => x.a - y.a || (y.b - y.a) - (x.b - x.a)).forEach(sg => { let l = 0; while(lanes[l] && lanes[l].some(o => !(sg.b < o.a || sg.a > o.b))) l++; (lanes[l] = lanes[l] || []).push(sg); sg.l = l; });
-    weeks += `<div class="cw" style="--nl:${lanes.length}">` + wd.map((d, i) => { const k = ymd(d); return `<div class="cd ${d.getMonth()!==M?"out":""} ${k===today?"td":""} ${i===0?"sun":i===6?"sat":""}"><span>${d.getDate()}</span></div>`; }).join("")
-      + segs.map(s => `<button type="button" class="cbar ${s.main?"main":""} ${s.faint?"faint":""} ${s.cs?"cs":""} ${s.ce?"ce":""}" style="grid-column:${s.a+1}/${s.b+2};grid-row:${s.l+2};--c:${s.c}" title="${esc(s.t)} · ${esc(s.s===s.e ? fMD(parseYmd(s.s)) : `${fMD(parseYmd(s.s))}~${fMD(parseYmd(s.e))}`)}" data-k="${s.k}"><em>${esc(s.a===s.b && !s.cs && !s.ce ? s.t.replace(/·.*$/, "").replace(/ 마감$/, "") : s.t)}</em></button>`).join("") + `</div>`;
+    weeks += `<div class="cw" data-ws="${ws}" style="--nl:${lanes.length}">` + wd.map((d, i) => { const k = ymd(d); return `<div data-d="${k}" class="cd ${d.getMonth()!==M?"out":""} ${k===today?"td":""} ${i===0?"sun":i===6?"sat":""}"><span>${d.getDate()}</span></div>`; }).join("")
+      + segs.map(s => `<button type="button" ${s.dk?`data-dk="${s.dk}"`:""} class="cbar ${s.main?"main":""} ${s.faint?"faint":""} ${s.cs?"cs":""} ${s.ce?"ce":""}" style="grid-column:${s.a+1}/${s.b+2};grid-row:${s.l+2};--c:${s.c}" title="${esc(s.t)} · ${esc(s.s===s.e ? fMD(parseYmd(s.s)) : `${fMD(parseYmd(s.s))}~${fMD(parseYmd(s.e))}`)}" data-k="${s.k}"><em>${esc(s.a===s.b && !s.cs && !s.ce ? s.t.replace(/·.*$/, "").replace(/ 마감$/, "") : s.t)}</em></button>`).join("") + `</div>`;
   }
   const used = [...new Map(ev.filter(e => !e.faint).map(e => [e.t, e])).values()];
   box.innerHTML = `<div class="cal"><div class="ch"><button type="button" data-cm="-1" aria-label="지난달">◀</button><b>${Y}년 ${M+1}월</b><button type="button" data-cm="1" aria-label="다음달">▶</button><button type="button" class="cx" aria-label="닫기">✕</button></div>
 <div class="cwh">${"일월화수목금토".split("").map((x, i) => `<span class="${i===0?"sun":i===6?"sat":""}">${x}</span>`).join("")}</div>${weeks}
 ${used.length ? `<div class="clg">${used.map(e => `<span><i style="background:${e.c}"></i>${esc(e.t)}</span>`).join("")}${ev.some(e=>e.faint) ? `<span><i class="fa"></i>다른 회의</span>` : ""}</div>` : ""}
-<p class="cnote">${S.cur ? "줄을 누르면 그 일을 하는 화면으로 갑니다. 날짜는 각 화면에서 고칩니다." : "회의를 고르면 그 회의의 일정이 표시됩니다."}</p>
+<p class="cnote">${S.cur ? "막대를 끌어 다른 날에 놓으면 날짜가 바뀌고 각 화면에도 들어갑니다. 누르면 그 일을 하는 화면으로 갑니다." : "회의를 고르면 그 회의의 일정이 표시됩니다."}</p>
 <label class="csend"><input type="checkbox" id="calSend" ${calSendOn() ? "checked" : ""}> 교무실 업무 도우미 첫 화면 달력에도 보내기</label></div>`;
   box.querySelectorAll("[data-cm]").forEach(b => b.onclick = e => { e.stopPropagation(); const d = new Date(CAL.y, CAL.m + +b.dataset.cm, 1); CAL.y = d.getFullYear(); CAL.m = d.getMonth(); renderCal(); });
   box.querySelector(".cx").onclick = () => calToggle(false);
   const cs = $("calSend"); if(cs) cs.onchange = () => { try{ localStorage.setItem(STORE.calSend, cs.checked ? "on" : "off"); }catch(e){} publishCal(); toast(cs.checked ? "첫 화면 달력에 학운위 일정을 보냅니다" : "첫 화면 달력에서 학운위 일정을 뺐습니다"); };
-  box.querySelectorAll(".cbar").forEach(b => b.onclick = () => { const e = ev[+b.dataset.k]; if(!e) return; calToggle(false);
+  calDragWire(box, ev);
+  box.querySelectorAll(".cbar").forEach(b => b.onclick = () => { if(CAL.dragged){ CAL.dragged = false; return; } const e = ev[+b.dataset.k]; if(!e) return; calToggle(false);
     if(e.key){ selectMeeting(e.key); return; }
     if(e.view && VIEWS[e.view]){ S.step = VIEWS[e.view].step || S.step; go(e.view); } });
+}
+/* 막대 끌기 (v2.5.0): 놓은 칸 날짜 − 잡은 칸 날짜만큼 옮긴다. 기간(방청·의견수렴)은 시작·끝을 함께 옮긴다 */
+function calDragWire(box, ev){
+  let dr = null;
+  const dateAt = (x, y) => { const w = document.elementsFromPoint(x, y).find(el => el.classList && el.classList.contains("cw") && el.dataset.ws); if(!w) return null;
+    const r = w.getBoundingClientRect(), i = Math.min(6, Math.max(0, Math.floor((x - r.left) / (r.width / 7)))); return addDays(parseYmd(w.dataset.ws), i); };
+  const mark = d => { box.querySelectorAll(".cd.drop").forEach(c => c.classList.remove("drop")); const c = d && box.querySelector(`.cd[data-d="${ymd(d)}"]`); if(c) c.classList.add("drop");
+    const n = box.querySelector(".cnote"); if(n && dr) n.textContent = d ? `${dr.E.t}: ${fMD(addDays(parseYmd(dr.E.s), dayDiff(dr.d0, d)))}${dr.E.e !== dr.E.s ? ` ~ ${fMD(addDays(parseYmd(dr.E.e), dayDiff(dr.d0, d)))}` : ""}(으)로 옮깁니다` : ""; };
+  box.querySelectorAll(".cbar[data-dk]").forEach(b => {
+    b.addEventListener("pointerdown", e => { if(e.button !== 0) return; const E = ev[+b.dataset.k], d0 = dateAt(e.clientX, e.clientY); if(!E || !d0) return;
+      dr = {b, E, d0, to:d0, x:e.clientX, y:e.clientY, moved:false}; try{ b.setPointerCapture(e.pointerId); }catch(_){} });
+    b.addEventListener("pointermove", e => { if(!dr || dr.b !== b) return;
+      if(!dr.moved){ if(Math.hypot(e.clientX - dr.x, e.clientY - dr.y) < 6) return; dr.moved = true; b.classList.add("dragging"); }
+      const d = dateAt(e.clientX, e.clientY); if(d){ dr.to = d; mark(d); } });
+    const end = ok => { if(!dr || dr.b !== b) return; const x = dr; dr = null; b.classList.remove("dragging"); mark(null);
+      if(!x.moved) return; CAL.dragged = true; const delta = ok ? dayDiff(x.d0, x.to) : 0;
+      setTimeout(() => { CAL.dragged = false; if(delta) calMove(x.E, delta); else renderCal(); }, 0); };
+    b.addEventListener("pointerup", () => end(true));
+    b.addEventListener("pointercancel", () => end(false));
+  });
+}
+/* 옮긴 날짜를 각 화면의 칸·회의 기록에 넣는다(공고·결과는 저장한 날짜, 기간은 직접 고친 날로 기억) */
+function calMove(E, delta){
+  if(!S.cur || !S.mt) return;
+  const F = S.mt.f, to = ymd(addDays(parseYmd(E.s), delta));
+  const shift = id => { const v = parseYmd($(id).value); if(v){ $(id).value = ymd(addDays(v, delta)); F[id] = $(id).value; } };
+  if(E.dk === "intake"){ toast(`안건 접수 마감은 회의 ${INTAKE_DAYS}일 전으로 정해집니다. 회의 막대를 옮기세요`); renderCal(); return; }
+  if(E.dk === "meet"){ const el = $("m_date"); el.value = to; el.dispatchEvent(new Event("change")); }   // 회의일 칸의 원래 처리(저장·접수 기록·마감일 따라가기)를 그대로 씀
+  else if(E.dk === "notice"){ if(typeNow()!=="긴급임시회" && to === ymd(noticeDue(meetingDate()))) delete S.mt.dates.open; else S.mt.dates.open = to; syncNotice(); }
+  else if(E.dk === "req"){ shift("m_reqStart"); shift("m_reqEnd"); }
+  else if(E.dk === "fee"){ shift("f_start"); shift("f_end"); }
+  else if(E.dk === "result" || E.dk === "promo"){ S.mt.dates[E.dk] = to; if(S.mode === E.dk) $("m_noticeDate").value = to; }
+  saveMeetState(); render(); renderTop(); renderCal();
+  toast(`${E.t.replace(/ 마감$/, "")}: ${fMD(parseYmd(to))}${E.e !== E.s ? ` ~ ${fMD(addDays(parseYmd(E.e), delta))}` : ""}`);
 }
 function calToggle(open){
   CAL.open = open == null ? !CAL.open : open;
@@ -3637,6 +3690,13 @@ function wireCal(){
   document.addEventListener("keydown", e => { if(e.key === "Escape" && CAL.open) calToggle(false); });
 }
 
+/* ===== 날짜 칸 (v2.5.0): 연도가 6자리까지 들어가는 문제 → 범위를 정해 연도를 4자리로 제한.
+   20260301처럼 이어 치면 연도 4자리 뒤 월·일로 넘어간다(강사 관리 도우미와 같은 방법). 나중에 생기는 칸도 누를 때 맞춘다 */
+function limitDate(el){ if(el && el.tagName === "INPUT" && (el.type === "date" || el.type === "month") && !el.max){ if(!el.min) el.min = el.type === "month" ? "1900-01" : "1900-01-01"; el.max = el.type === "month" ? "2099-12" : "2099-12-31"; } }
+document.addEventListener("focusin", e => limitDate(e.target), true);
+document.addEventListener("pointerdown", e => limitDate(e.target), true);
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("input[type=date],input[type=month]").forEach(limitDate));
+document.querySelectorAll("input[type=date],input[type=month]").forEach(limitDate);
 /* ===== 일정 우체통 (v2.4.0) =====
    같은 사이트(wonwongemini-ctrl.github.io)의 '교무실 업무 도우미' 첫 화면이 통합 달력·오늘 할 일에 보여 준다.
    이 브라우저 저장 공간 'school-cal-v1'의 '학운위 운영' 칸(hakwoonwi-run)만 덮어쓴다. 인터넷으로는 아무것도 보내지 않는다.
@@ -3653,8 +3713,8 @@ function meetCalEvents(m){
   if(F.mtype !== "긴급임시회") add(intakeDue(md), null, "안건 접수 마감");
   const nd = noticeOf(md, D.open, F.mtype==="긴급임시회"); if(nd) add(nd, null, parseYmd(D.open) ? "공고·안건 발송" : "공고 마감");
   add(md, null, `제${m.hoe}회 회의`, 1);
-  const r = parseYmd(D.result) || addDays(md, 1);
-  add(r, addDays(md, 7) > r ? addDays(md, 7) : r, "결과 이송·홍보");
+  add(parseYmd(D.result) || xferDue(md), null, parseYmd(D.result) ? "결과 이송" : "결과 이송 마감");
+  add(parseYmd(D.promo) || promoDue(md), null, parseYmd(D.promo) ? "결과 홍보·회의록 공개" : "결과 홍보 마감");
   return ev;
 }
 function publishCal(){
@@ -5245,10 +5305,17 @@ function checks(d){
     if(d.md && d.nd && dayDiff(new Date(), d.md) < NOTICE_DAYS && d.type!=="긴급임시회") out.push(["warn","8일 전 통지",`바뀐 회의일까지 ${dayDiff(new Date(), d.md)}일 남았습니다. 수정 공고와 알림이 회의 8일 전까지 나가야 7일 전까지 도착합니다.`]);
   }
   if(d.mode==="result" && d.md && d.nd){
-    const gap = dayDiff(d.md, d.nd);
+    const gap = dayDiff(d.md, d.nd), T = xferDays();
     if(gap<0) out.push(["warn","시행일","결과 이송 시행일이 회의일보다 빠릅니다."]);
-    else if(gap<=7) out.push(["ok","7일 이내 결과 홍보",`회의일부터 ${gap}일 뒤 시행으로 기준(7일 이내)을 충족합니다.`]);
-    else out.push(["warn","7일 이내 결과 홍보",`회의일부터 ${gap}일이 지났습니다. 심의 결과는 7일 이내에 홍보해야 합니다.`]);
+    else if(gap<=T) out.push(["ok","결과 이송 기한",`회의 후 ${gap}일 뒤 이송으로 학교 규정 기한(회의 후 ${T}일 이내)을 충족합니다.`]);
+    else out.push(["warn","결과 이송 기한",`회의 후 ${gap}일이 지났습니다. 학교 규정 기한은 회의 후 ${T}일 이내입니다(기한은 학교 정보에서 바꿉니다).`]);
+    if(gap>=PROMO_DAYS) out.push(["warn","7일 이내 결과 홍보",`이송이 회의 후 ${gap}일이라 결과 홍보·회의록 공개 기한(${fDot(promoDue(d.md))}, 회의종료 후 7일 이내)을 맞추기 어렵습니다.`]);
+  }
+  if(d.mode==="promo" && d.md && d.nd){
+    const gap = dayDiff(d.md, d.nd);
+    if(gap<0) out.push(["warn","시행일","결과 홍보 시행일이 회의일보다 빠릅니다."]);
+    else if(gap<=PROMO_DAYS) out.push(["ok","7일 이내 결과 홍보",`회의 후 ${gap}일 뒤 홍보로 기준(회의종료 후 7일 이내, 조례 제15조)을 충족합니다.`]);
+    else out.push(["warn","7일 이내 결과 홍보",`회의 후 ${gap}일이 지났습니다. 심의 결과와 회의록은 회의종료 후 7일 이내(${fDot(promoDue(d.md))}까지) 공개해야 합니다.`]);
   }
   if(d.mode!=="progress"){
     const noQty = d.attachments.filter(a=>!/\d+\s*(부|매|권|건|장|개|종|묶음)\.$/.test(a));
@@ -5519,7 +5586,8 @@ function init(){
     } else if(v) S.mt.dates[S.mode] = v;
     saveMeetState();
   });
-  $("m_date").addEventListener("change", ()=>{ const md=parseYmd($("m_date").value); if(md && S.mode==="open"){ $("m_reqEnd").value = ymd(addDays(md,-2)); $("f_end").value = ymd(addDays(md,-1)); } syncNotice(); render(); });
+  $("m_date").addEventListener("change", ()=>{ const md=parseYmd($("m_date").value), F=(S.mt&&S.mt.f)||{}; if(md){ if(!F.m_reqEnd) $("m_reqEnd").value = ymd(addDays(md,-2)); if(!F.f_end) $("f_end").value = ymd(addDays(md,-1)); } syncNotice(); render(); });
+  ["m_reqStart","m_reqEnd","f_start","f_end"].forEach(id => $(id).addEventListener("change", ()=>{ if(!S.mt) return; if($(id).value) S.mt.f[id] = $(id).value; else delete S.mt.f[id]; saveMeetState(); }));
   $("m_noticeDate").addEventListener("change", ()=>{ if(S.mode==="open") syncNotice(); render(); });
   const reNum = (selId, inId) => $(selId).addEventListener("change", ()=>{ if(!$(selId).value) return; $(inId).value = $("s_prefix").value + $(selId).value.replace(/^new:/,""); render(); });
   reNum("n_docSel","n_doc"); reNum("n_noticeSel","n_notice");
