@@ -829,7 +829,7 @@ table.ag tr.flash td{animation:ikFlash 3s ease-out}
             <div class="row3">
               <label class="f" data-show="intake late withdraw sched open change add progress"><span id="lbl_date">회의일</span><input type="date" id="m_date"></label>
               <label class="f" data-show="intake late withdraw sched open change add progress"><span>시작 시각</span><input type="time" id="m_time"></label>
-              <label class="f" data-show="open change add result promo"><span id="lbl_nd">공고·시행일</span><input type="date" id="m_noticeDate"></label>
+              <label class="f" data-show="open change add result promo"><span id="lbl_nd">공고·시행일</span><input type="date" id="m_noticeDate"><small id="ndHint" hidden></small></label>
             </div>
             <div class="row">
               <label class="f" data-show="open change add result promo"><span>수신</span><input type="text" id="m_recipient"></label>
@@ -998,8 +998,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.0", date:"2026-10-30"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.1", date:"2026-11-09"};
 const CHANGELOG = [
+  {v:"2.4.1", date:"2026-11-09", items:[
+    "공고일: 처음 접수한 날을 공고일로 잡던 것을 고침. 기본은 공고 마감일(회의일 7일 전), 앞당겨 공고하면 회의 개최의 '공고·시행일'에 넣은 날을 저장해 씀",
+    "긴급 임시회는 공고·시행일에 저장한 날만 공고일로 씀(넣기 전에는 달력에 공고를 표시하지 않음)",
+    "이달 일정·첫 화면 달력: 공고일을 넣기 전에는 '공고 마감', 넣은 뒤에는 '공고·안건 발송'으로 표시. 방청 신청·부담경비 의견수렴 시작일도 공고 다음 날로 따라감(직접 고친 날은 그대로)"
+  ]},
   {v:"2.4.0", date:"2026-10-30", items:[
     "회의 일정(안건 접수 마감·공고·방청 신청·부담경비 의견수렴·회의·결과 이송·홍보)을 같은 사이트의 '교무실 업무 도우미' 첫 화면 통합 달력·오늘 할 일에도 보냄(이 브라우저 안에서만, 인터넷으로 보내지 않음)",
     "이달 일정 달력 아래 '첫 화면 달력에도 보내기'로 켜고 끔"
@@ -2035,15 +2040,15 @@ function selectMeeting(key){
   const md = parseYmd(F.m_date) || m.date || new Date();
   m.intakes = m.items.map(a=> m.src==="intake" ? (a.stI ? null : docRefDate(a.intake) || parseYmd(a.recv)) : docRefDate(a.intake)).filter(Boolean).sort((a,b)=>a-b);
   m.firstIntake = m.items.slice().sort((a,b)=>(docRefDate(a.intake)||0)-(docRefDate(b.intake)||0))[0]?.intake || "";
-  const nd = m.intakes[0] || new Date();
+  const nd = noticeOf(md, S.mt.dates.open, (F.mtype || guessType(m))==="긴급임시회");   // 접수일이 아니라 공고 마감일(7일 전) 또는 저장한 공고일
   m.openDate = nd;
   $("m_date").value = ymd(md);
   $("m_time").value = F.m_time || $("m_time").value || "14:40";
   $("m_place").value = F.m_place || $("m_place").value || $("m_place").dataset.saved || "본관 회의실";
-  $("m_reqStart").value = ymd(addDays(nd,1));
+  $("m_reqStart").value = nd ? ymd(addDays(nd,1)) : "";
   $("m_reqEnd").value = ymd(addDays(md,-2));
   $("m_reqEndTime").value = "16:40";
-  $("f_start").value = ymd(addDays(nd,1));
+  $("f_start").value = nd ? ymd(addDays(nd,1)) : "";
   $("f_end").value = ymd(addDays(md,-1));
   $("f_endTime").value = "16:40";
   $("o_date").value = ymd(md); $("o_time").value = $("m_time").value;
@@ -2051,7 +2056,7 @@ function selectMeeting(key){
   if(!$("m_method").value) $("m_method").value = "방청 신청서 제출 시 별도 안내";
   if(!$("m_greet").value) $("m_greet").value = GREET_DEFAULT;
   S.agendaState = m.items.slice().sort((a,b)=>(+a.no||0)-(+b.no||0)).map(a=>{
-    const id = docRefDate(a.intake); const late = m.src==="intake" ? !!a.stI : !!(id && id>nd);
+    const id = docRefDate(a.intake); const late = m.src==="intake" ? !!a.stI : !!(id && nd && id>nd);
     return {...a, late, on:!late, fee:false, added:late, edit:a.name};
   });
   $("c_add").checked = S.agendaState.some(a=>a.added);
@@ -2087,11 +2092,12 @@ function applyMode(fromMeeting){
   if(m){
     const md = parseYmd($("m_date").value) || m.date || new Date();
     let nd;
-    if(mode==="open") nd = m.openDate;
+    if(mode==="open") nd = curNotice();
     else if(mode==="result" || mode==="promo"){ const r = m.items.map(a=>docRefDate(a.resultDoc)).find(Boolean); nd = r || addDays(md,1); }
     else { const lates = S.agendaState.filter(a=>a.added).map(a=>docRefDate(a.intake)).filter(Boolean).sort((a,b)=>b-a); nd = lates[0] || new Date(); }
     if(S.mt && S.mt.dates[mode]) nd = parseYmd(S.mt.dates[mode]) || nd;
     $("m_noticeDate").value = ymd(nd);
+    noticeHint();
     $("m_recipient").value = mode==="promo" ? "내부결재" : ["intake","late","withdraw","sched"].includes(mode) ? `${$("s_school").value.trim()}운영위원회 위원장` : mode==="open" ? "내부결재" : mode==="result" ? $("s_school").value.trim() : "각 위원";
     $("m_rel").value = formatRef(m.firstIntake);
     const rd = relDefault(mode); if(rd) $("m_rel").value = rd;
@@ -2411,6 +2417,31 @@ function stepStat(stepId){
   return {total:list.length, gen, done: !!(S.mt && S.mt.done[stepId])};
 }
 const fMD = d => d ? `${d.getMonth()+1}. ${d.getDate()}.(${WD[d.getDay()]})` : "";
+/* 공고일 (v2.4.1): 회의 개최의 '공고·시행일'에 저장한 날(dates.open)이 있으면 그 날,
+   없으면 공고 마감일(회의일 7일 전). 긴급 임시회는 마감이 없으므로 저장한 날만 쓴다(없으면 null). */
+const noticeDue = md => md ? addDays(md, -7) : null;
+const noticeOf = (md, saved, urgent) => parseYmd(saved) || (urgent ? null : noticeDue(md));
+function curNotice(){ if(!S.cur) return null; return noticeOf(parseYmd($("m_date").value) || S.cur.date, S.mt && S.mt.dates.open, typeNow()==="긴급임시회"); }
+const noticeSaved = () => !!(S.mt && parseYmd(S.mt.dates.open));
+/* 공고일이 바뀌면(회의일·회의 종류·공고일 칸) 방청 신청·부담경비 의견수렴 시작일을 공고 다음 날로 옮긴다. 직접 고친 날은 그대로 */
+function syncNotice(){
+  if(!S.cur) return;
+  const nd = curNotice(), prev = S.cur.openDate ? ymd(addDays(S.cur.openDate, 1)) : "";
+  ["m_reqStart","f_start"].forEach(id => { const el = $(id); if(el && (!el.value || el.value===prev)) el.value = nd ? ymd(addDays(nd, 1)) : ""; });
+  S.cur.openDate = nd;
+  if(S.mode==="open") $("m_noticeDate").value = ymd(nd);
+  noticeHint();
+}
+function noticeHint(){
+  const h = $("ndHint"); if(!h) return;
+  if(!S.cur || S.mode!=="open"){ h.hidden = true; return; }
+  const md = parseYmd($("m_date").value) || S.cur.date, due = noticeDue(md);
+  h.hidden = false;
+  h.textContent = typeNow()==="긴급임시회" ? (noticeSaved() ? "긴급 임시회: 넣은 날을 공고일로 씁니다." : "긴급 임시회: 공고한 날을 넣으세요. 넣기 전에는 달력에 공고가 표시되지 않습니다.")
+    : !due ? "회의일을 넣으면 공고 마감일(7일 전)이 채워집니다."
+    : noticeSaved() && S.mt.dates.open > ymd(due) ? `넣은 날이 공고 마감일(회의 7일 전) ${fMD(due)}보다 늦습니다. 회의일을 늦추거나 긴급 임시회로 하세요.`
+    : noticeSaved() && S.mt.dates.open !== ymd(due) ? `앞당겨 공고한 날로 씁니다. (마감 ${fMD(due)})` : `공고 마감일(회의 7일 전) ${fMD(due)}입니다. 앞당겨 공고했으면 그 날짜로 바꾸세요.`;
+}
 function stepDate(stepId){
   if(!S.cur) return {t:"", bad:false};
   const md = parseYmd($("m_date").value);
@@ -2422,7 +2453,7 @@ function stepDate(stepId){
     return {t: (+a===+b) ? fMD(a) : `${a.getMonth()+1}. ${a.getDate()}.~${b.getMonth()+1}. ${b.getDate()}.`, bad:late};
   }
   if(stepId==="prep"){
-    const nd = parseYmd(S.mt && S.mt.dates.open) || S.cur.openDate;
+    const nd = curNotice();
     const bad = !!(nd && md && dayDiff(nd, md) < 7 && typeNow()!=="긴급임시회");
     return {t: nd ? fMD(nd) : "미정", bad};
   }
@@ -3542,10 +3573,10 @@ function calEvents(){
   const add = (s, e, t, c, view, extra = {}) => { if(s) ev.push({s:ymd(s), e:ymd(e || s), t, c, view, ...extra}); };
   if(S.cur){
     const md = parseYmd($("m_date").value) || S.cur.date;
-    const nd = parseYmd(S.mt && S.mt.dates.open) || S.cur.openDate;
+    const nd = curNotice();
     const urgent = typeNow()==="긴급임시회";
     if(md && !urgent) add(addDays(md, -8), null, "안건 접수 마감", "#e5484d", "intake:main");
-    if(nd) add(nd, null, "공고·안건 발송", "#2383e2", "prep:open");
+    if(nd) add(nd, null, noticeSaved() ? "공고·안건 발송" : "공고 마감", "#2383e2", "prep:open");
     const rs = parseYmd($("m_reqStart").value), re = parseYmd($("m_reqEnd").value);
     if(rs && re && rs <= re) add(rs, re, "방청 신청", "#30a46c", "prep:open");
     if((S.agendaState||[]).some(a => a.fee)){ const fs = parseYmd($("f_start").value), fe = parseYmd($("f_end").value); if(fs && fe && fs <= fe) add(fs, fe, "부담경비 의견수렴", "#f5a524", "prep:open"); }
@@ -3616,7 +3647,7 @@ function meetCalEvents(m){
   const md = parseYmd(F.m_date) || m.date; if(!md) return [];
   const ev = [], add = (s, e, t, main) => { if(s) ev.push({s:ymd(s), e:ymd(e || s), t, main}); };
   if(F.mtype !== "긴급임시회") add(addDays(md, -8), null, "안건 접수 마감");
-  const nd = parseYmd(D.open); if(nd) add(nd, null, "공고·안건 발송");
+  const nd = noticeOf(md, D.open, F.mtype==="긴급임시회"); if(nd) add(nd, null, parseYmd(D.open) ? "공고·안건 발송" : "공고 마감");
   add(md, null, `제${m.hoe}회 회의`, 1);
   const r = parseYmd(D.result) || addDays(md, 1);
   add(r, addDays(md, 7) > r ? addDays(md, 7) : r, "결과 이송·홍보");
@@ -5470,15 +5501,22 @@ function init(){
     if(v==="__new"){ e.target.value = S.cur ? S.cur.key : ""; go("base:meetings"); return; }
     if(v) selectMeeting(v);
   });
-  document.querySelectorAll("input[name=mtype]").forEach(r=>r.addEventListener("change",()=>{ if(S.mt){ S.mt.f.mtype = typeNow(); saveMeetState(); } fillAttachDefault(); applyVisibility(); render(); renderTop(); }));
+  document.querySelectorAll("input[name=mtype]").forEach(r=>r.addEventListener("change",()=>{ if(S.mt){ S.mt.f.mtype = typeNow(); saveMeetState(); } syncNotice(); fillAttachDefault(); applyVisibility(); render(); renderTop(); }));
   document.querySelectorAll("input[name=subkind]").forEach(r=>r.addEventListener("change",()=>{ fillAttachDefault(); fillNumberChoices(); render(); }));
   ["c_sched","c_add"].forEach(id=>$(id).addEventListener("change",()=>{ fillAttachDefault(); applyVisibility(); render(); }));
   $("m_attach").addEventListener("input", ()=>{ S.attachEdited = true; schedule(); });
   ["m_date","m_time","m_place","m_reason"].forEach(id=>$(id).addEventListener("change", ()=>{ if(S.mt){ S.mt.f[id] = $(id).value; saveMeetState(); } }));
   $("m_date").addEventListener("change", ()=>{ const md = parseYmd($("m_date").value); if(!S.cur || !md) return; S.cur.date = md; const rec = curIntake(); if(rec){ rec.mdate = $("m_date").value; const all = loadIntakes(); all[rec.key] = rec; saveIntakes(all); } fillMeetingSelect(); });
-  $("m_noticeDate").addEventListener("change", ()=>{ if(S.mt && $("m_noticeDate").value){ S.mt.dates[S.mode] = $("m_noticeDate").value; saveMeetState(); } });
-  $("m_date").addEventListener("change", ()=>{ const md=parseYmd($("m_date").value); if(md && S.mode==="open"){ $("m_reqEnd").value = ymd(addDays(md,-2)); $("f_end").value = ymd(addDays(md,-1)); } render(); });
-  $("m_noticeDate").addEventListener("change", ()=>{ const nd=parseYmd($("m_noticeDate").value); if(nd && S.mode==="open"){ $("m_reqStart").value = ymd(addDays(nd,1)); $("f_start").value = ymd(addDays(nd,1)); } render(); });
+  $("m_noticeDate").addEventListener("change", ()=>{
+    if(!S.mt) return; const v = $("m_noticeDate").value;
+    if(S.mode==="open"){   // 공고 마감일 그대로이거나 지우면 저장하지 않음(회의일을 바꾸면 마감일을 따라감). 긴급 임시회는 넣은 날을 그대로 저장
+      const due = ymd(noticeDue(parseYmd($("m_date").value)));
+      if(!v || (v===due && typeNow()!=="긴급임시회")) delete S.mt.dates.open; else S.mt.dates.open = v;
+    } else if(v) S.mt.dates[S.mode] = v;
+    saveMeetState();
+  });
+  $("m_date").addEventListener("change", ()=>{ const md=parseYmd($("m_date").value); if(md && S.mode==="open"){ $("m_reqEnd").value = ymd(addDays(md,-2)); $("f_end").value = ymd(addDays(md,-1)); } syncNotice(); render(); });
+  $("m_noticeDate").addEventListener("change", ()=>{ if(S.mode==="open") syncNotice(); render(); });
   const reNum = (selId, inId) => $(selId).addEventListener("change", ()=>{ if(!$(selId).value) return; $(inId).value = $("s_prefix").value + $(selId).value.replace(/^new:/,""); render(); });
   reNum("n_docSel","n_doc"); reNum("n_noticeSel","n_notice");
   document.querySelectorAll("#main .view:not([data-view=msg]) input, #main .view:not([data-view=msg]) textarea").forEach(el=>{
