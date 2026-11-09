@@ -799,7 +799,7 @@ table.ag tr.flash td{animation:ikFlash 3s ease-out}
               <label class="f"><span>당초 장소</span><input type="text" id="sc_oplace"></label>
             </div>
             <label class="f"><span>변경 사유</span><input type="text" id="sc_reason" placeholder="예: 학교 행사 일정 중복"></label>
-            <p class="hint" style="margin:0">아래 '회의일·시작 시각·장소'에는 <b>바뀐</b> 일정을 넣으세요. 바뀐 회의일 기준으로 7일 전 공고·8일 전 접수를 다시 점검합니다. 학교 기안 뒤 '개최 수정 알림·수정 공고'에서 위원장 문서를 받으세요.</p>
+            <p class="hint" style="margin:0">아래 '회의일·시작 시각·장소'에는 <b>바뀐</b> 일정을 넣으세요. 바뀐 회의일 기준으로 8일 전 공고·배부와 10일 전 접수를 다시 점검합니다. 학교 기안 뒤 '개최 수정 알림·수정 공고'에서 위원장 문서를 받으세요.</p>
           </div>
 
           <div class="card">
@@ -998,10 +998,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.1", date:"2026-11-09"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.4.2", date:"2026-11-09"};
 const CHANGELOG = [
-  {v:"2.4.1", date:"2026-11-09", items:[
-    "공고일: 처음 접수한 날을 공고일로 잡던 것을 고침. 기본은 공고 마감일(회의일 7일 전), 앞당겨 공고하면 회의 개최의 '공고·시행일'에 넣은 날을 저장해 씀",
+  {v:"2.4.2", date:"2026-11-09", items:[
+    "일정 기준을 바꿈: 안건 접수 마감 = 회의 10일 전, (결재·배부 준비 9일 전), 공고·안건 배부 마감 = 회의 8일 전. 안건이 7일 전까지 위원에게 도착해야 하고 '7일 전까지'는 회의일 전날부터 거꾸로 세므로 8일 전에 보냄",
+    "공고일: 처음 접수한 날을 공고일로 잡던 것을 고침. 기본은 공고 마감일(회의 8일 전), 앞당겨 공고하면 회의 개최의 '공고·시행일'에 넣은 날을 저장해 씀",
+    "최종 접수 뒤 들어온 안건: 회의 10일 전까지 접수하면 추가 제출, 그 뒤면 긴급 제출로 판단",
     "긴급 임시회는 공고·시행일에 저장한 날만 공고일로 씀(넣기 전에는 달력에 공고를 표시하지 않음)",
     "이달 일정·첫 화면 달력: 공고일을 넣기 전에는 '공고 마감', 넣은 뒤에는 '공고·안건 발송'으로 표시. 방청 신청·부담경비 의견수렴 시작일도 공고 다음 날로 따라감(직접 고친 날은 그대로)"
   ]},
@@ -2040,7 +2042,7 @@ function selectMeeting(key){
   const md = parseYmd(F.m_date) || m.date || new Date();
   m.intakes = m.items.map(a=> m.src==="intake" ? (a.stI ? null : docRefDate(a.intake) || parseYmd(a.recv)) : docRefDate(a.intake)).filter(Boolean).sort((a,b)=>a-b);
   m.firstIntake = m.items.slice().sort((a,b)=>(docRefDate(a.intake)||0)-(docRefDate(b.intake)||0))[0]?.intake || "";
-  const nd = noticeOf(md, S.mt.dates.open, (F.mtype || guessType(m))==="긴급임시회");   // 접수일이 아니라 공고 마감일(7일 전) 또는 저장한 공고일
+  const nd = noticeOf(md, S.mt.dates.open, (F.mtype || guessType(m))==="긴급임시회");   // 접수일이 아니라 공고 마감일(8일 전) 또는 저장한 공고일
   m.openDate = nd;
   $("m_date").value = ymd(md);
   $("m_time").value = F.m_time || $("m_time").value || "14:40";
@@ -2418,8 +2420,10 @@ function stepStat(stepId){
 }
 const fMD = d => d ? `${d.getMonth()+1}. ${d.getDate()}.(${WD[d.getDay()]})` : "";
 /* 공고일 (v2.4.1): 회의 개최의 '공고·시행일'에 저장한 날(dates.open)이 있으면 그 날,
-   없으면 공고 마감일(회의일 7일 전). 긴급 임시회는 마감이 없으므로 저장한 날만 쓴다(없으면 null). */
-const noticeDue = md => md ? addDays(md, -7) : null;
+   없으면 공고 마감일(회의 8일 전). 긴급 임시회는 마감이 없으므로 저장한 날만 쓴다(없으면 null). */
+const NOTICE_DAYS = 8, INTAKE_DAYS = 10;   // 공고·안건 배부 마감 = 회의 8일 전(7일 전까지 도착), 안건 접수 마감 = 10일 전(9일 전 결재·배부 준비)
+const noticeDue = md => md ? addDays(md, -NOTICE_DAYS) : null;
+const intakeDue = md => md ? addDays(md, -INTAKE_DAYS) : null;
 const noticeOf = (md, saved, urgent) => parseYmd(saved) || (urgent ? null : noticeDue(md));
 function curNotice(){ if(!S.cur) return null; return noticeOf(parseYmd($("m_date").value) || S.cur.date, S.mt && S.mt.dates.open, typeNow()==="긴급임시회"); }
 const noticeSaved = () => !!(S.mt && parseYmd(S.mt.dates.open));
@@ -2438,23 +2442,23 @@ function noticeHint(){
   const md = parseYmd($("m_date").value) || S.cur.date, due = noticeDue(md);
   h.hidden = false;
   h.textContent = typeNow()==="긴급임시회" ? (noticeSaved() ? "긴급 임시회: 넣은 날을 공고일로 씁니다." : "긴급 임시회: 공고한 날을 넣으세요. 넣기 전에는 달력에 공고가 표시되지 않습니다.")
-    : !due ? "회의일을 넣으면 공고 마감일(7일 전)이 채워집니다."
-    : noticeSaved() && S.mt.dates.open > ymd(due) ? `넣은 날이 공고 마감일(회의 7일 전) ${fMD(due)}보다 늦습니다. 회의일을 늦추거나 긴급 임시회로 하세요.`
-    : noticeSaved() && S.mt.dates.open !== ymd(due) ? `앞당겨 공고한 날로 씁니다. (마감 ${fMD(due)})` : `공고 마감일(회의 7일 전) ${fMD(due)}입니다. 앞당겨 공고했으면 그 날짜로 바꾸세요.`;
+    : !due ? "회의일을 넣으면 공고·배부 마감일(회의 8일 전)이 채워집니다."
+    : noticeSaved() && S.mt.dates.open > ymd(due) ? `넣은 날이 공고·배부 마감일(회의 8일 전) ${fMD(due)}보다 늦습니다. 회의일을 늦추거나 긴급 임시회로 하세요.`
+    : noticeSaved() && S.mt.dates.open !== ymd(due) ? `앞당겨 공고한 날로 씁니다. (마감 ${fMD(due)})` : `공고·배부 마감일(회의 8일 전) ${fMD(due)}입니다. 앞당겨 공고했으면 그 날짜로 바꾸세요.`;
 }
 function stepDate(stepId){
   if(!S.cur) return {t:"", bad:false};
   const md = parseYmd($("m_date").value);
   if(stepId==="intake"){
     const ds = (S.cur.intakes||[]).slice().sort((a,b)=>a-b);
-    const late = md && ds.some(x => dayDiff(x, md) < 8) && typeNow()!=="긴급임시회";
+    const late = md && ds.some(x => dayDiff(x, md) < INTAKE_DAYS) && typeNow()!=="긴급임시회";
     if(!ds.length) return {t:"미정", bad:false};
     const a = ds[0], b = ds[ds.length-1];
     return {t: (+a===+b) ? fMD(a) : `${a.getMonth()+1}. ${a.getDate()}.~${b.getMonth()+1}. ${b.getDate()}.`, bad:late};
   }
   if(stepId==="prep"){
     const nd = curNotice();
-    const bad = !!(nd && md && dayDiff(nd, md) < 7 && typeNow()!=="긴급임시회");
+    const bad = !!(nd && md && dayDiff(nd, md) < NOTICE_DAYS && typeNow()!=="긴급임시회");
     return {t: nd ? fMD(nd) : "미정", bad};
   }
   if(stepId==="meet") return {t: md ? fMD(md) : "미정", bad:false};
@@ -3049,7 +3053,7 @@ function renderIntake(view){
   let fixed = false; rec.items.forEach(it => { if(!it.pos && /\s/.test((it.name||"").trim())){ const sp = splitProposer(it.name); it.pos = sp.pos; it.name = sp.name; fixed = true; } }); if(fixed) putIntake(rec);
   const late = !!rec.final;                 // 최종 접수 뒤면 새 파일은 추가·긴급 제출
   const md = parseYmd(S.mt && S.mt.f.m_date) || parseYmd(rec.mdate);
-  const cut = md ? addDays(md, -8) : null;
+  const cut = intakeDue(md);
   const rows = rec.items.map((it, i) => ({it, i}));
   const firstRows = rows.filter(x => !x.it.st);
   const hasData = n => !!S.files[n];
@@ -3092,7 +3096,7 @@ ${late ? `<td class="delc">${delBtn}</td>` : `<td class="nw">${acts}</td>`}</tr>
 <div class="fl ${rec.doc&&rec.doc.no?"done":""}"><div class="k">④ 기안번호 입력</div><div class="t">${rec.doc&&rec.doc.no?esc(intakeRef(rec)):"업무관리시스템 기안번호"}</div><span class="small">개최·일정 변경·결과 이송 공문의 '관련'</span></div></div>`;
   box.innerHTML = pick + intakeGuide(false) + `${flow}
 <div class="card">
-  <div class="row-btns" style="margin:0 0 10px"><b>제${rec.gi}기 제${rec.hoe}회</b><button type="button" class="minibtn agform" style="margin-left:auto;order:9" title="교직원에게 나눠 줄 빈 심의 안건 양식">심의 안건 작성 양식 (.hwpx)</button><span class="hint" style="margin:0">${rec.year}학년도${rec.cum?` · 누년 ${esc(rec.cum)}회`:""}${md?` · 회의 ${fMD(md)} · 8일 전 기준 ${fMD(cut)}`:" · 회의일 미정(개최 준비에서 입력)"}${fin ? ` · ${rec.fromLedger ? "안건대장 회의" : `최종 접수 ${esc(fin.at)}`}` : ""}</span></div>
+  <div class="row-btns" style="margin:0 0 10px"><b>제${rec.gi}기 제${rec.hoe}회</b><button type="button" class="minibtn agform" style="margin-left:auto;order:9" title="교직원에게 나눠 줄 빈 심의 안건 양식">심의 안건 작성 양식 (.hwpx)</button><span class="hint" style="margin:0">${rec.year}학년도${rec.cum?` · 누년 ${esc(rec.cum)}회`:""}${md?` · 회의 ${fMD(md)} · 접수 마감(10일 전) ${fMD(cut)}`:" · 회의일 미정(개최 준비에서 입력)"}${fin ? ` · ${rec.fromLedger ? "안건대장 회의" : `최종 접수 ${esc(fin.at)}`}` : ""}</span></div>
   <label class="drop" id="ikDrop" tabindex="0"><input type="file" id="ikFile" accept=".hwpx,.hwp,.pdf,.xlsx,.xls,.jpg,.jpeg,.png" multiple hidden>
     <strong>${late?"새로 들어온 안건 파일과 붙임을 끌어다 놓기 (추가·긴급 제출)":"안건 파일(.hwpx)과 붙임(.pdf, .hwpx)을 한꺼번에 끌어다 놓기"}</strong>
     <small>${late?"접수일로 추가·긴급 제출을 판단합니다(고친 파일은 그 줄의 [수정 제출]) · ":""}.hwp도 됩니다(처음 한 번 인터넷 필요) · 붙임은 이름 앞부분이 같으면 자동 짝</small></label>
@@ -3119,7 +3123,7 @@ ${!late || !rec.fromLedger ? `<div class="card">
   ${fin ? `<p class="cond soft">최종 접수됨: ${esc(fin.at)} (${esc(fin.from)} ~ ${esc(fin.to)}). 이 뒤에 올리는 파일은 추가·긴급 제출로 받습니다.</p>` : ""}
   ${(IK.lastWarn||[]).length && !late ? `<p class="cond">${IK.lastWarn.map(esc).join("<br>")}</p>` : ""}
   <p class="hint" data-short="파일마다 새 쪽에서 시작하고, 쪽번호는 새로 매깁니다.">용지·여백은 올린 파일의 한글 설정 그대로 두고, 파일마다 새 쪽에서 시작합니다(끝의 빈 줄은 지워 빈 쪽이 생기지 않게). 원래 쪽번호는 모두 지우고 첫 안건부터 아래 가운데 "- 1 -"로 새로 넣습니다. 표지·목록에는 쪽번호를 넣지 않습니다.</p>
-  ${md && fin && !rec.fromLedger && dayDiff(parseYmd(fin.at), md) < 8 && typeNow()!=="긴급임시회" ? `<p class="cond">최종 접수일(${esc(fin.at)})이 회의일 8일 전(${fMD(cut)})보다 늦습니다. 위원에게 8일 전에 안건을 보낼 수 없으면 긴급 임시회로 하거나 회의일을 조정하세요.</p>` : ""}
+  ${md && fin && !rec.fromLedger && dayDiff(parseYmd(fin.at), md) < INTAKE_DAYS && typeNow()!=="긴급임시회" ? `<p class="cond">최종 접수일(${esc(fin.at)})이 접수 마감(회의 10일 전, ${fMD(cut)})보다 늦습니다. 회의 8일 전(${fMD(noticeDue(md))})까지 공고·안건 배부를 마칠 수 있는지 확인하고, 어려우면 회의일을 늦추거나 긴급 임시회로 하세요.</p>` : ""}
 </div>` : ledgerBookCard(rec)}
 <div id="ikPreview"></div>`;
   wireIntake(rec, late);
@@ -3150,10 +3154,10 @@ function intakeGuide(open){
 <li>이 화면에서 안건 파일을 올리면 번호를 매기고 안건집으로 묶습니다.</li></ul></div>
 <div><h4>3. 기한</h4><ul>
 <li>위원장은 회의 <b>7일 전까지</b> 일시·장소·안건을 위원에게 알리고, 회의 전까지 학교 홈페이지에 공개합니다(초·중등교육법 시행령 제59조의2).</li>
-<li>안건도 7일 전까지 위원에게 <b>도착</b>해야 하므로, 이 프로그램은 회의 <b>8일 전</b>을 접수 기준으로 봅니다. 회의일을 바꾸면 이 날짜도 다시 맞추세요.</li>
+<li>안건도 7일 전까지 위원에게 <b>도착</b>해야 하고, '7일 전까지'는 회의일 전날부터 거꾸로 세므로 이 프로그램은 회의 <b>8일 전</b>을 공고·안건 배부 마감으로 봅니다.</li><li>그 전날(9일 전) 기안 결재·배부 준비를 하도록 <b>안건 접수 마감은 회의 10일 전</b>입니다. 회의일을 바꾸면 이 날짜들도 다시 맞추세요.</li>
 <li>공고할 때 안건도 함께 홈페이지에 공개합니다. 공고문은 위원장 명의로 냅니다.</li></ul></div>
 <div><h4>4. 기한 뒤에 들어온 안건</h4><ul>
-<li>8일 전까지는 <b>추가 제출</b>로 받아 위원에게 다시 보냅니다.</li>
+<li>접수 마감(10일 전)까지는 <b>추가 제출</b>로 받아 8일 전까지 위원에게 다시 보냅니다.</li>
 <li>그 뒤에는 긴급한 사유가 있을 때만 <b>긴급 제출</b>로 받고, 사유를 기안에 적습니다. 아니면 다음 회의로 넘깁니다.</li>
 <li>고친 안건은 줄마다 [수정 제출], 거두어들일 안건은 [철회]로 받습니다. 소집 공고 뒤 철회·수정은 예외일 때만 하고, 이미 의제가 된 안건은 운영위원회의 동의가 필요합니다(회의운영규칙 예시 제10조).</li></ul></div>
 <div><h4>5. 미리 챙길 것</h4><ul>
@@ -3322,8 +3326,8 @@ function choose(title, html, opts){
   });
 }
 /* ===== 최종 접수 뒤의 변경: 추가·긴급·수정 제출, 철회, 회의 일정 변경 =====
-   판단 기준(사용자 결정): 위원에게 회의 8일 전까지 안건을 보낼 수 있는지.
-   - 접수일이 회의일 8일 전까지 → 추가 제출,  그 뒤 → 긴급 제출(긴급 사유·7일 전 통지 예외 문구)
+   판단 기준(사용자 결정): 접수 마감(회의 10일 전)까지 들어와 8일 전까지 배부할 수 있는지.
+   - 접수일이 회의일 10일 전까지 → 추가 제출,  그 뒤 → 긴급 제출(긴급 사유·7일 전 통지 예외 문구)
    - 이미 접수된 안건과 안건명(또는 파일 이름)이 같으면 → 수정 제출(원래 안건번호를 씀)
    흐름: 학교 기안(추가 제출 / 철회 요청 / 일정 변경 요청) → 위원장 '안건 추가 접수 처리'·'개최 수정 알림'·'수정 공고' */
 const SUB_LABEL = {add:"추가 제출", urgent:"긴급 제출", mod:"수정 제출"};
@@ -3339,7 +3343,7 @@ function findOriginal(rec, it){
 function judgeLate(rec, it){
   if(it.of) return "mod";
   const md = meetingDate(), r = parseYmd(it.recvDate);
-  return md && r && dayDiff(r, md) < 8 ? "urgent" : "add";
+  return md && r && dayDiff(r, md) < INTAKE_DAYS ? "urgent" : "add";
 }
 function onLateItem(rec, it){
   it.of = findOriginal(rec, it);
@@ -3426,7 +3430,7 @@ function lateCell(it, cut){
   const rec0 = curIntake();
   const origs = rec0 ? rec0.items.map((x,j)=>({x,j})).filter(({x}) => x !== it && !x.st && !x.wd) : [];
   const r = parseYmd(it.recvDate);
-  const why = it.st==="mod" ? "수정 제출" : !cut ? "회의일 미정" : r && r > cut ? `8일 전(${fMD(cut)}) 뒤 접수` : `8일 전(${fMD(cut)})까지 접수`;
+  const why = it.st==="mod" ? "수정 제출" : !cut ? "회의일 미정" : r && r > cut ? `접수 마감(${fMD(cut)}) 뒤 접수` : `접수 마감(${fMD(cut)})까지 접수`;
   const j = it.st==="mod" && rec0 ? rec0.items.findIndex(x=>x.id===it.of) : -1;
   const sel = it.st==="mod" ? "mod:"+it.of : it.st;
   return `<select class="inp" data-f="st" aria-label="제출 구분"><option value="add" ${sel==="add"?"selected":""}>추가 제출</option><option value="urgent" ${sel==="urgent"?"selected":""}>긴급 제출</option>
@@ -3436,7 +3440,7 @@ function lateCell(it, cut){
 function lateIntro(rec, cut){
   const md = meetingDate();
   return `<div class="card"><h3>판단 기준</h3>
-<p class="hint" style="margin:0">회의일 ${md?fMD(md):"(미정 — 개최 준비에서 회의일을 넣으세요)"}의 8일 전${cut?` = <b>${fMD(cut)}</b>`:""}. 이날까지 접수하면 <span class="badge b-add">추가 제출</span>(위원에게 규정대로 배부 가능), 그 뒤면 <span class="badge b-warn">긴급 제출</span>(긴급 사유 필요, 7일 전 통지 예외 문구, 회의 전 홈페이지 공개), 이미 접수된 안건과 이름이 같으면 <span class="badge b-mod">수정 제출</span>(원래 안건번호)로 봅니다. 판단은 표의 '제출 구분'에서 바꿀 수 있고, 이름이 달라도 '수정: 원래 안건'을 고르면 수정 제출이 됩니다.</p></div>
+<p class="hint" style="margin:0">회의일 ${md?fMD(md):"(미정 — 개최 준비에서 회의일을 넣으세요)"}의 10일 전(접수 마감)${cut?` = <b>${fMD(cut)}</b>`:""}. 이날까지 접수하면 <span class="badge b-add">추가 제출</span>(위원에게 규정대로 배부 가능), 그 뒤면 <span class="badge b-warn">긴급 제출</span>(긴급 사유 필요, 7일 전 통지 예외 문구, 회의 전 홈페이지 공개), 이미 접수된 안건과 이름이 같으면 <span class="badge b-mod">수정 제출</span>(원래 안건번호)로 봅니다. 판단은 표의 '제출 구분'에서 바꿀 수 있고, 이름이 달라도 '수정: 원래 안건'을 고르면 수정 제출이 됩니다.</p></div>
 </div>`;
 }
 function lateActions(rec){
@@ -3575,7 +3579,7 @@ function calEvents(){
     const md = parseYmd($("m_date").value) || S.cur.date;
     const nd = curNotice();
     const urgent = typeNow()==="긴급임시회";
-    if(md && !urgent) add(addDays(md, -8), null, "안건 접수 마감", "#e5484d", "intake:main");
+    if(md && !urgent) add(intakeDue(md), null, "안건 접수 마감", "#e5484d", "intake:main");
     if(nd) add(nd, null, noticeSaved() ? "공고·안건 발송" : "공고 마감", "#2383e2", "prep:open");
     const rs = parseYmd($("m_reqStart").value), re = parseYmd($("m_reqEnd").value);
     if(rs && re && rs <= re) add(rs, re, "방청 신청", "#30a46c", "prep:open");
@@ -3646,7 +3650,7 @@ function meetCalEvents(m){
   const F = (o && o.f) || {}, D = (o && o.dates) || {};
   const md = parseYmd(F.m_date) || m.date; if(!md) return [];
   const ev = [], add = (s, e, t, main) => { if(s) ev.push({s:ymd(s), e:ymd(e || s), t, main}); };
-  if(F.mtype !== "긴급임시회") add(addDays(md, -8), null, "안건 접수 마감");
+  if(F.mtype !== "긴급임시회") add(intakeDue(md), null, "안건 접수 마감");
   const nd = noticeOf(md, D.open, F.mtype==="긴급임시회"); if(nd) add(nd, null, parseYmd(D.open) ? "공고·안건 발송" : "공고 마감");
   add(md, null, `제${m.hoe}회 회의`, 1);
   const r = parseYmd(D.result) || addDays(md, 1);
@@ -3920,10 +3924,10 @@ function todoCard(nx){
       ? {t:"회의 고르기", p:"맨 위 회의 목록에서 이번 회의를 고르거나 새 회의를 만드세요.", b:"회의 차수 화면으로"}
       : {t:"회의 만들기", p:"기수·회차와 회의 예정일을 넣어 이번 회의를 만듭니다. 만들면 바로 안건 접수로 넘어갑니다.", b:"회의 만들기", alt:`쓰던 안건대장 엑셀이 있으면 <button type="button" class="lnk" data-todo="base:ledger">불러오기</button>`},
     "intake:main": rec && rec.items.length
-      ? {t:"안건 접수 마무리하기", p:`안건 ${rec.items.length}건이 들어와 있습니다. 순서를 확인하고 <b>최종 접수</b>를 누르면 안건번호가 매겨지고 안건집이 만들어집니다.${md?` 접수 마감(8일 전)은 <b>${fMD(addDays(md,-8))}</b>입니다.`:""}`, b:"안건 접수 화면으로"}
+      ? {t:"안건 접수 마무리하기", p:`안건 ${rec.items.length}건이 들어와 있습니다. 순서를 확인하고 <b>최종 접수</b>를 누르면 안건번호가 매겨지고 안건집이 만들어집니다.${md?` 접수 마감(10일 전)은 <b>${fMD(intakeDue(md))}</b>입니다.`:""}`, b:"안건 접수 화면으로"}
       : {t:"안건 받기", p:"교직원에게 심의 안건 작성 양식을 나눠 주고, 들어온 안건 파일을 올리세요.", b:"안건 접수 화면으로", alt:`<button type="button" class="lnk" data-todo="intake:msg">교직원 메시지</button> 보내기`},
     "intake:doc": {t:"학교 기안: 심의 안건 제출", p:"학교장 명의 '심의 안건 제출 및 회의 개최 요청' 기안문을 받아 업무관리시스템에서 기안하고, 기안번호를 넣으세요.", b:"기안문 화면으로"},
-    "prep:open": {t:"회의 개최 문서 만들기", p:`개최 공문·공고문·안내장 등을 만듭니다. ${stat("prep")} 공고는 회의 7일 전까지 합니다.`, b:"회의 개최 화면으로", alt:`위원에게 <button type="button" class="lnk" data-todo="prep:msg">안내 메시지</button>`},
+    "prep:open": {t:"회의 개최 문서 만들기", p:`개최 공문·공고문·안내장 등을 만듭니다. ${stat("prep")} 공고·안건 배부는 회의 8일 전까지 합니다(7일 전까지 도착).`, b:"회의 개최 화면으로", alt:`위원에게 <button type="button" class="lnk" data-todo="prep:msg">안내 메시지</button>`},
     "meet:main": {t:"회의 준비물 만들기", p:`출석을 넣고 시나리오·출석 등록부·명패를 받으세요. ${stat("meet")}`, b:"회의 진행 준비물로", alt:`회의 날 <button type="button" class="lnk" data-todo="meet:msg">당일 안내 메시지</button>`},
     "result:main": {t:"회의 결과 정리", p:"회의록을 만들 개요·프롬프트와 안건처리 결과 이송 기안을 만듭니다.", b:"회의 결과 화면으로"},
     "result:promo": {t:"결과 홍보 기안", p:"위원장의 결과 이송을 받은 뒤 학교가 올리는 '심의결과 홍보' 기안입니다.", b:"결과 홍보 화면으로"}
@@ -5178,8 +5182,8 @@ function checks(d){
         out.push(["info","긴급 임시회",`7일 전 통지 예외(${d.urgentLaw})를 적용합니다(공고일부터 회의일까지 ${gap}일). 공고와 홈페이지 공개는 회의 전까지 해야 합니다.`]);
         if(!d.urgentReason) out.push(["warn","긴급 사유","왼쪽 입력의 '긴급 사유'를 적으세요. 공문 행정사항과 공고 비고에 들어가며, 감사 때 예외 적용 근거가 됩니다."]);
       }
-      else if(gap>=7) out.push(["ok","7일 전 공고",`공고일부터 회의일까지 ${gap}일로 기준(7일 전)을 충족합니다.`]);
-      else out.push(["warn","7일 전 공고",`공고일부터 회의일까지 ${gap}일뿐입니다. 공고·시행일을 앞당기거나, 긴급 안건이면 회의 종류를 '긴급 임시회'로 바꾸세요.`]);
+      else if(gap>=NOTICE_DAYS) out.push(["ok","8일 전 공고·배부",`공고일부터 회의일까지 ${gap}일로 기준(8일 전 공고·배부, 7일 전 도착)을 충족합니다.`]);
+      else out.push(["warn","8일 전 공고·배부",`공고일부터 회의일까지 ${gap}일뿐입니다(8일 전까지 공고·배부해야 7일 전까지 도착). 공고·시행일을 앞당기거나, 긴급 안건이면 회의 종류를 '긴급 임시회'로 바꾸세요.`]);
     }
     if(d.re && d.md && d.re >= d.md) out.push(["warn","방청 신청 마감","방청 신청 마감일이 회의일과 같거나 늦습니다."]);
     if(d.rs && d.re && d.rs > d.re) out.push(["warn","방청 신청 기간","신청 시작일이 마감일보다 늦습니다."]);
@@ -5220,8 +5224,8 @@ function checks(d){
       if(!d.rec.final) out.push(["info","최종 접수","'안건 올리기·최종 접수'에서 최종 접수를 하면 안건 목록이 확정됩니다."]);
       if(!d.sch.docNo) out.push(["info","학교 기안번호","업무관리시스템에서 기안한 뒤 기안번호와 생산일자를 넣으세요. 대장 줄의 '안건접수기안' 칸에 들어갑니다."]);
       if(!$("s_schoolPrefix").value.trim()) out.push(["info","학교 문서번호 앞부분","기본 입력 → 학교·결재 정보에 '학교 문서번호 앞부분'(예: 한빛초-)을 넣으면 기안번호만 적어도 됩니다."]);
-      const cut = d.md ? addDays(d.md, -8) : null, late = cut ? d.rec.items.filter(it=>!it.st && !it.wd && parseYmd(it.recvDate) > cut) : [];
-      if(late.length && d.type!=="긴급임시회") out.push(["warn","8일 전 접수",`회의일 8일 전(${fDot(cut)}) 뒤에 접수한 안건이 ${late.length}건 있습니다. 위원에게 8일 전까지 안건을 보낼 수 없으면 회의일을 늦추거나 긴급 임시회로 하세요.`]);
+      const cut = intakeDue(d.md), late = cut ? d.rec.items.filter(it=>!it.st && !it.wd && parseYmd(it.recvDate) > cut) : [];
+      if(late.length && d.type!=="긴급임시회") out.push(["warn","10일 전 접수",`접수 마감(회의 10일 전, ${fDot(cut)}) 뒤에 접수한 안건이 ${late.length}건 있습니다. 8일 전까지 공고·배부할 수 없으면 회의일을 늦추거나 긴급 임시회로 하세요.`]);
     }
   }
   if(d.mode==="late"){
@@ -5238,7 +5242,7 @@ function checks(d){
     const s = S.mt && S.mt.sched;
     if(!s || !schedChanged()) out.push(["warn","일정 변경","아래 회의일·시각·장소를 바뀐 일정으로 고치세요. 지금은 당초 일정과 같습니다."]);
     if(!d.schedReason) out.push(["warn","변경 사유","변경 사유를 적으세요."]);
-    if(d.md && d.nd && dayDiff(new Date(), d.md) < 7 && d.type!=="긴급임시회") out.push(["warn","7일 전 통지",`바뀐 회의일까지 ${dayDiff(new Date(), d.md)}일 남았습니다. 수정 공고와 알림이 회의 7일 전까지 나가야 합니다.`]);
+    if(d.md && d.nd && dayDiff(new Date(), d.md) < NOTICE_DAYS && d.type!=="긴급임시회") out.push(["warn","8일 전 통지",`바뀐 회의일까지 ${dayDiff(new Date(), d.md)}일 남았습니다. 수정 공고와 알림이 회의 8일 전까지 나가야 7일 전까지 도착합니다.`]);
   }
   if(d.mode==="result" && d.md && d.nd){
     const gap = dayDiff(d.md, d.nd);
