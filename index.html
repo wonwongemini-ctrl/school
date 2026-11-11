@@ -79,6 +79,7 @@ button,input,select{font:inherit;color:inherit}
 .gap-slot .vert{font-size:13px;color:var(--paper);opacity:.85}
 .soon{width:66px;background:#EDE6D6;border:3px dashed var(--ink);border-bottom:none;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center}
 .soon .vert{font-family:var(--f-head);font-size:15px;color:var(--sub)}
+.divider{width:30px;height:170px;border:3px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:12px;box-shadow:inset -5px 0 0 rgba(0,0,0,.12)}.divider .vert{font-family:var(--f-head);font-size:14px;color:#fff;opacity:1;letter-spacing:.06em}
 .bookend{width:18px;height:120px;background:#9AA0A6;border:3px solid var(--ink);border-bottom:none;border-radius:4px 4px 0 0;margin-left:4px}
 .cal{position:relative;margin-left:14px;width:136px;height:168px;display:block;text-decoration:none;color:var(--ink);transition:transform .18s ease;transform-origin:50% 100%}
 .cal:hover,.cal:focus-visible{transform:rotate(-4deg) translateY(-4px);color:var(--ink)}
@@ -545,20 +546,20 @@ dialog.qdlg{width:min(640px,calc(100vw - 24px))}
 'use strict';
 var A='https://wonwongemini-ctrl.github.io/school-tool/';
 var B='https://wonwongemini-ctrl.github.io/school/hakwoonwi/';
-var CATS=[['에듀파인','#E0442A'],['강사','#3FA34D'],['학운위','#8E5BD0'],['한글 문서','#3D7BE0'],['기타','#6B6670']];
+var CATS=[['에듀파인','#E0442A'],['강사','#3FA34D'],['학운위','#8E5BD0'],['업무도구','#3D7BE0'],['기타','#6B6670']];
 var CAT={};CATS.forEach(function(c){CAT[c[0]]=c[1];});
 var BUILTIN=[
  {id:'pumui',spine:'품의 도우미',name:'에듀파인 품의 도우미',desc:'견적서를 넣으면 기안문과 품목내역 파일을 만들어요',tag:'에듀파인',url:A+'edufine-pumui.html'},
  {id:'instructor',spine:'강사 관리',name:'강사 관리 도우미',desc:'강사 대장, 계약서·출근부·경력증명서, 서류와 일정',tag:'강사',url:A+'instructor-tool.html'},
  {id:'gusung',spine:'학운위 구성',name:'학운위 구성 도우미',desc:'매년 2~4월 · 위원 선출·구성 기안문과 서식을 일정만 넣고 한 번에',tag:'학운위',url:B+'gusung.html',helps:[['블로그 소개','https://blog.naver.com/oderobong/224438738839']]},
  {id:'unyeong',spine:'학운위 운영',name:'학운위 운영업무 도우미',desc:'연중 · 회의 공문·공고, 명패·안건 인덱스·라벨, 기한 점검',tag:'학운위',url:B+'unyeong.html',helps:[['사용설명서','https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc'],['블로그 소개','https://blog.naver.com/oderobong/224428377136']]},
- {id:'hwp2hwpx',spine:'한글 변환',name:'HWP·HTML → HWPX 변환',desc:'옛 한글 파일·AI가 쓴 글을 한글 새 형식으로, 폴더째 한 번에',tag:'한글 문서',url:A+'hwp2hwpx.html'},
- {id:'hwpxmerge',spine:'한글 합치기',name:'한글 파일 합치기',desc:'여러 한글 파일을 하나로 · 표지·목차·쪽 번호',tag:'한글 문서',url:A+'hwpx-merge.html'},
- {id:'nameplate',spine:'명패',name:'명패 만들기',desc:'이름 붙여 넣으면 접는 명패를 A4로',tag:'한글 문서',url:A+'nameplate.html'},
- {id:'labels',spine:'라벨·견출지',name:'라벨·견출지 인쇄',desc:'엑셀 명단으로 라벨지·서류철 견출지 찍기',tag:'한글 문서',url:A+'labels.html'},
- {id:'signsheet',spine:'서명부',name:'참석자 서명부',desc:'명단을 붙여 넣으면 서명 칸 있는 한글 파일로',tag:'한글 문서',url:A+'sign-sheet.html'},
- {id:'textbox',spine:'글상자 묶기',name:'그림 글상자 묶기',desc:'체계도 그림 위에 글상자를 얹어 hwpx로',tag:'한글 문서',url:A+'hwpx-picture-textbox.html'},
- {id:'staffpay',spine:'공무직 급여',name:'공무직 급여 도우미',desc:'통상시급 검산 · 연가보상비 계산 · 급여·수당 궁금한 것 찾아보기',tag:'기타',url:A+'staff-pay.html'}
+ {id:'hwp2hwpx',spine:'한글 변환',name:'HWP·HTML → HWPX 변환',desc:'옛 한글 파일·AI가 쓴 글을 한글 새 형식으로, 폴더째 한 번에',tag:'업무도구',url:A+'hwp2hwpx.html'},
+ {id:'hwpxmerge',spine:'한글 합치기',name:'한글 파일 합치기',desc:'여러 한글 파일을 하나로 · 표지·목차·쪽 번호',tag:'업무도구',url:A+'hwpx-merge.html'},
+ {id:'nameplate',spine:'명패 만들기',name:'명패 만들기',desc:'이름 붙여 넣으면 접는 명패를 A4로',tag:'업무도구',url:A+'nameplate.html'},
+ {id:'labels',spine:'라벨·견출지',name:'라벨·견출지 인쇄',desc:'엑셀 명단으로 라벨지·서류철 견출지 찍기',tag:'업무도구',url:A+'labels.html'},
+ {id:'signsheet',spine:'서명부',name:'참석자 서명부',desc:'명단을 붙여 넣으면 서명 칸 있는 한글 파일로',tag:'업무도구',url:A+'sign-sheet.html'},
+ {id:'textbox',spine:'글상자 묶기',name:'그림 글상자 묶기',desc:'체계도 그림 위에 글상자를 얹어 hwpx로',tag:'업무도구',url:A+'hwpx-picture-textbox.html'},
+ {id:'staffpay',spine:'연차보상비',name:'공무직 급여 도우미',desc:'통상시급 검산 · 연가보상비 계산 · 급여·수당 궁금한 것 찾아보기',tag:'기타',url:A+'staff-pay.html'}
 ];
 var BODY=['#FFD84D','#FFCF33','#FFE070'];
 var KEY='school-desk-v1';
@@ -576,7 +577,7 @@ function cleanEv(e){if(!e||!ISO8.test(e.date||'')||typeof e.title!=='string')ret
  if(ISO8.test(e.done||''))o.done=e.done;
  return o;}
 function safeUrl(u){try{var x=new URL(String(u||'').trim());if(x.protocol==='https:'||x.protocol==='http:')return x.href;}catch(e){}return '';}
-function cleanCustom(c){if(!c||typeof c!=='object')return null;var url=safeUrl(c.url);var name=String(c.name||'').trim().slice(0,40);if(!url||!name)return null;var tag=CAT[c.tag]?c.tag:'기타';return {id:/^c-[\w-]{1,40}$/.test(c.id||'')?c.id:'c-'+Math.random().toString(36).slice(2,10),name:name,url:url,tag:tag,desc:String(c.desc||'').trim().slice(0,60)};}
+function cleanCustom(c){if(!c||typeof c!=='object')return null;var url=safeUrl(c.url);var name=String(c.name||'').trim().slice(0,40);if(!url||!name)return null;var tag=c.tag==='한글 문서'?'업무도구':c.tag;tag=CAT[tag]?tag:'기타';return {id:/^c-[\w-]{1,40}$/.test(c.id||'')?c.id:'c-'+Math.random().toString(36).slice(2,10),name:name,url:url,tag:tag,desc:String(c.desc||'').trim().slice(0,60)};}
 function all(){var list=BUILTIN.map(function(t,i){return Object.assign({},t,{body:BODY[i%3],h:242+(i*13)%22});});
  S.custom.forEach(function(c,i){list.push(Object.assign({},c,{spine:c.name.slice(0,6),custom:true,desc:c.desc||'내가 추가한 링크',body:BODY[(i+1)%3],h:240+(i*7)%20}));});
  return list;}
@@ -600,7 +601,9 @@ var DEFAULT_MSG='필요한 업무 파일을 책장에서 꺼내 오세요!';
 
 function renderShelf(){
  var rows=$('rows');rows.textContent='';
- all().forEach(function(t){
+ var LIST=all(),ORDER=[];CATS.forEach(function(c){var g=LIST.filter(function(t){return t.tag===c[0];});if(g.length){ORDER.push({divider:c});ORDER=ORDER.concat(g);}});
+ ORDER.forEach(function(t){
+  if(t.divider){rows.appendChild(el('div',{class:'slot'},[el('div',{class:'divider',style:'background:'+t.divider[1],title:t.divider[0]+' 업무','aria-hidden':'true'},[el('span',{class:'vert',text:t.divider[0]})])]));return;}
   var slot=el('div',{class:'slot'});
   if(S.mine.indexOf(t.id)>=0){
    slot.appendChild(el('div',{class:'gap-slot',style:'height:'+t.h+'px','aria-hidden':'true'},[el('span',{class:'vert',text:'책상에 있음'})]));

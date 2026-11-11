@@ -1056,8 +1056,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.7.0", date:"2026-11-11"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.7.1", date:"2026-11-11"};
 const CHANGELOG = [
+  {v:"2.7.1", date:"2026-11-11", items:[
+    "개최 수정 알림·수정 공고: 회의 일정이 바뀌지 않았는데도 '회의 일정 변경(당초=변경)'이 들어가던 문제를 고침",
+    "새 회의 만들기: 회의 종류 기본값이 회차를 따라감(1회 정기회, 그 밖 임시회)",
+    "개최 수정 알림·수정 공고에 '수정 안건'이 빠지던 문제를 고침(수정 제출만 있을 때 내용이 비던 문제), 붙임에 '수정 심의 안건' 추가. 추가 안건이 긴급이 아니면 붙임을 '심의 추가 자료'로",
+    "'안건이 늦게 들어왔어요' 설명에 추가·긴급 제출을 나누는 기준을 적음"
+  ]},
   {v:"2.7.0", date:"2026-11-11", items:[
     "처음 쓰는 사람 중심으로 화면 정리: 왼쪽 메뉴에는 정상 흐름만, 끝난 일은 '끝난 일 n개'로 접힘",
     "'계획이 바뀌었어요' 단추: 날짜 변경·늦게 온 안건·안건 수정·철회·급한 회의를 고르면 그 회의에만 '생긴 일' 메뉴가 생김([없던 일로]로 없앰)",
@@ -2219,7 +2225,7 @@ function applyMode(fromMeeting){
     if(mode==="change"){
       const sc = S.mt && S.mt.sched, rec = curIntake();
       if(sc && schedChanged()){ $("c_sched").checked = true; $("o_date").value = sc.od || ""; $("o_time").value = sc.ot || ""; }
-      else if(sc) $("c_sched").checked = false;
+      else $("c_sched").checked = false;   // v2.7.1: 일정이 바뀌지 않았으면 '회의 일정 변경'을 넣지 않음(기본 체크 때문에 당초=변경으로 들어가던 문제)
       if(rec) $("c_add").checked = lateBatch(rec).some(x=>x.it.st!=="mod");
     }
     S.agendaState.forEach(a => a.on = (mode==="open" || mode==="intake") ? !a.late : mode==="late" ? a.late : true);
@@ -2457,7 +2463,10 @@ function fillAttachDefault(){
     type==="긴급임시회" ? `제${n}회 ${committee} 임시회 안건 소집 공고 1부.` : `제${n}회 ${committee} ${kind} 소집 공고 1부.`,
     `운영위원회 심의 안건 1부.`, `학교운영위원회 회의 방청 안내장 1부.`,
     ...(hasFee ? [`학부모 부담경비 사항에 대한 의견서 1부.`] : [])];
-  else if(mode==="change") L = [`제${n}회 ${committee}(${kind}) 개최 수정 공고문 1부.`, ...($("c_add").checked && anyAdded ? [`제${n}회 ${committee}(${kind}) 긴급 심의 추가 자료 1부.`] : [])];
+  else if(mode==="change"){
+    const rec = curIntake(), urg = S.agendaState.some(a=>a.on && a.added && a.note==="긴급"), mod = rec && lateBatch(rec).some(x=>x.it.st==="mod");
+    L = [`제${n}회 ${committee}(${kind}) 개최 수정 공고문 1부.`, ...($("c_add").checked && anyAdded ? [`제${n}회 ${committee}(${kind}) ${urg?"긴급 ":""}심의 추가 자료 1부.`] : []), ...(mod ? [`제${n}회 ${committee}(${kind}) 수정 심의 안건 1부.`] : [])];
+  }
   else if(mode==="add") L = [`제${n}회 ${kind} ${sub} 심의 제출 안건 1부.`];
   else if(mode==="progress") L = [];
   else if(mode==="promo") L = [`가정통신문 1부.`, `홍보자료 1부.`];
@@ -2713,7 +2722,7 @@ function foldUpdate(ck){
 const SITS = [
   {id:"sched", short:"날짜 변경", t:"회의 날짜나 장소가 바뀌었어요", s:"학교가 변경 요청 기안을 올리고, 학운위가 바뀐 내용을 다시 알려요", steps:["prep"], views:["prep:sched","prep:change"], go:"prep:sched",
     ev:() => !!(S.mt && S.mt.sched && typeof schedChanged==="function" && schedChanged())},
-  {id:"late", short:"늦게 온 안건", t:"안건이 늦게 들어왔어요", s:"추가로 받거나 긴급 안건으로 받아요", steps:["intake","prep"], views:["intake:latedoc","prep:change"], go:"intake:main",
+  {id:"late", short:"늦게 온 안건", t:"안건이 늦게 들어왔어요", s:"접수일로 나눠요: 접수 마감(회의 10일 전)까지면 추가 제출, 그 뒤면 긴급 제출", steps:["intake","prep"], views:["intake:latedoc","prep:change"], go:"intake:main",
     ev:() => { const r = curIntake(); return !!(r && r.items.some(it => it.st==="add" || it.st==="urgent")); }, hint: st => sitLateHint(st)},
   {id:"mod", short:"안건 수정·철회", t:"들어온 안건을 고치거나 거둬들여요", s:"안건 받기에서 그 줄의 [고친 파일 받기]·[거둬들이기(철회)]를 눌러요", steps:["intake","prep"], views:["intake:latedoc","prep:change"], go:"intake:main",
     ev:() => { const r = curIntake(); return !!(r && r.items.some(it => it.st==="mod" || it.wd)); }, hint: st => sitLateHint(st)},
@@ -3220,6 +3229,9 @@ ${meetTypePicker(df.hoe===1 ? "정기회" : "임시회")}
 <p class="hint" style="margin:0 0 8px"><span class="badge b-mod">안건대장</span> 불러온 대장에 있는 회의(지울 수 없음) · <span class="badge b-add">안건접수</span> 이 프로그램에서 안건 접수부터 만든 회의(지울 수 있음 — 보통 학교 개최 요청 기안 전에 일정이 취소되었을 때)</p>
 ${S.meetings.length ? `<table class="ag mtlist"><tr><th>구분</th><th>회의</th><th>회의일</th><th>안건</th><th>상태</th><th></th></tr>${rows}</table>` : emptyBox(`<p class="hint" style="margin:0">아직 회의가 없습니다. 위에서 만들거나 안건대장을 불러오세요.</p>`, "calendar")}</div>`;
   $("nm_go").onclick = createIntakeMeeting;
+  // 회의 종류 기본값은 회차를 따라감(1회 = 정기회, 그 밖 = 임시회). 카드를 직접 누르면 그대로 둠
+  let typed = false; document.querySelectorAll("input[name=nm_type]").forEach(r => r.addEventListener("change", () => { typed = true; }));
+  $("nm_hoe").addEventListener("input", () => { if(typed) return; const t = +$("nm_hoe").value===1 ? "정기회" : "임시회"; const r = document.querySelector(`input[name=nm_type][value="${t}"]`); if(r) r.checked = true; });
   box.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const m = S.meetings.find(x=>x.key===b.dataset.open); selectMeeting(b.dataset.open); go(m && m.src==="intake" && !m.fromLedger ? "intake:main" : "prep:open"); });
   box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => deleteIntakeMeeting(b.dataset.del));
 }
@@ -3679,7 +3691,7 @@ function collectChange(d, rec){
     d.added = (d.mode==="change" ? d.lateList.filter(a=>a.st!=="mod") : d.lateList).map(a=>({...a}));
     d.sub = kinds.length===1 ? SUB_LABEL[kinds[0]].replace(" 제출","") : "추가";
     d.urgentAdd = d.lateList.some(a=>a.st==="urgent");
-    if(d.mode==="change") d.addOn = d.added.length > 0;
+    if(d.mode==="change"){ d.addOn = d.added.length > 0; d.modList = d.lateList.filter(a=>a.st==="mod"); }   // v2.7.1: 수정 제출도 개최 수정 알림·공고에
   } else if(d.mode==="add" || d.mode==="change"){ d.urgentAdd = d.added.length > 0; }
 }
 /* 붙임 기본값 */
@@ -4466,11 +4478,12 @@ function gongmun(d){
   } else if(d.mode==="change"){
     kit = "change"; tag = "개최_수정_알림";
     title = `제${d.n}회 ${d.committee}(${k}) 회의 개최 수정 알림`;
-    const doAdd = d.addOn && d.added.length, doSched = d.sched, doWd = (d.wdList||[]).length;
-    const what = `${doAdd?(d.urgentAdd?"긴급안건을 추가하고 ":"안건을 추가하고 "):""}${doWd?"일부 안건을 철회하고 ":""}${doSched?"아래와 같이 일정을 변경하오니":"아래와 같이 알려드리오니"}`;
+    const doAdd = d.addOn && d.added.length, doSched = d.sched, doWd = (d.wdList||[]).length, doMod = (d.modList||[]).length;
+    const what = `${doAdd?(d.urgentAdd?"긴급안건을 추가하고 ":"안건을 추가하고 "):""}${doMod?"일부 안건을 수정하고 ":""}${doWd?"일부 안건을 철회하고 ":""}${doSched?"아래와 같이 일정을 변경하오니":"아래와 같이 알려드리오니"}`;
     items = [P("p1",`1. 관련: ${d.rel}`), P("p2",`2. ${d.committee} 규정 ${d.article}에 의거하여 제${d.n}회 ${k}의 ${what} 위원 여러분께서는 참고하여 주시기 바랍니다.`)];
     let li = 0;
     if(doAdd){ items.push(SUB(`${LET[li++]}. 추가 안건`), {t:"table", head:["번호","안 건 명","발의(제출자)"], rows:d.added.map(a=>[a.no,a.name,a.proposer])}); }
+    if(doMod){ items.push(SUB(`${LET[li++]}. 수정 안건`), {t:"table", head:["번호","안 건 명","발의(제출자)"], rows:d.modList.map(a=>[a.no,a.name,a.proposer])}); }
     if(doWd){ items.push(SUB(`${LET[li++]}. 철회 안건`), {t:"table", head:["번호","안 건 명","발의(제출자)"], rows:d.wdList.map(a=>[a.no,a.name,a.proposer])}); }
     if(doSched){ items.push(SUB(`${LET[li++]}. 회의 일정 변경`), {t:"p",role:"dash",text:`- 당초: ${dt(d.od,d.ot)}`}, {t:"p",role:"dash",text:`- 변경: ${dt(d.md,d.time)}`}); }
     if(doAdd && d.urgentAdd) items.push(...adminItems(d, "change"));
@@ -4701,6 +4714,7 @@ function buildNotice(d){
     const ch = [];
     if(d.sched) ch.push(`회의 일시 변경 (당초 ${d.od?fDotW(d.od):""} ${d.ot} → 변경 ${d.md?fDotW(d.md):""} ${d.time})`);
     if(d.addOn && d.added.length) ch.push(`${d.urgentAdd?"긴급 ":""}안건 ${d.added.length}건 추가`);
+    if((d.modList||[]).length) ch.push(`안건 ${d.modList.length}건 수정 (${d.modList.map(a=>a.no).join(", ")})`);
     if((d.wdList||[]).length) ch.push(`안건 ${d.wdList.length}건 철회 (${d.wdList.map(a=>a.no).join(", ")})`);
     rows.push(["변경사항", ch.join(", ")]);
     if(d.addOn && d.added.length && d.urgentAdd) rows.push(["비　　고", `${d.urgentLaw}에 따른 긴급 안건 추가${d.urgentReason?`(사유: ${d.urgentReason})`:""}`]);
