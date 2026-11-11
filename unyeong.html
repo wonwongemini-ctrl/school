@@ -651,6 +651,28 @@ tr.planrow td{background:#fbfbf8}
 @media (max-width:1100px){.tbstp{grid-template-columns:1fr}}
 iframe.tbframe{width:100%;height:78vh;border:0;background:#E9ECEF;border-radius:8px}
 .startbox + .doors{margin-top:18px}
+
+/* v2.7.0 메뉴·상황 단추·회의 종류 */
+.types.seg{display:none}
+.typeinfo{font-size:15px;color:#374151;margin-left:6px;white-space:nowrap}.typeinfo b{font-weight:800}
+.typeinfo button{font:inherit;font-size:13px;margin-left:6px;border:1px solid #cbd3dd;background:#fff;border-radius:6px;padding:2px 8px;cursor:pointer}
+.sitbtn{display:block;margin:18px 10px 0;border:1.5px dashed #d9a400;border-radius:12px;background:#fffaf0;padding:10px 12px;cursor:pointer;width:calc(100% - 20px);text-align:left;font:inherit}
+.sitbtn:hover{background:#fff3d6}.sitbtn b{display:block;font-size:15px;color:#7a5600}.sitbtn small{color:#8a6d1a;font-size:12.5px}
+.doneg{display:block;margin:4px 10px;font:inherit;font-size:13.5px;color:#6b7280;background:none;border:0;cursor:pointer;padding:4px 6px;text-align:left}
+.doneg:hover{color:#374151}.doneg.undo{color:#9a6b00;text-decoration:underline;font-size:12.5px}
+.donebox .ni{opacity:.75}
+.nh2{margin:14px 12px 4px;font-size:13px;color:#a16207;font-weight:700}
+.sithint{margin:2px 12px 6px;font-size:12.5px;color:#6b7280;line-height:1.5}
+.vsub{font-size:15px;font-weight:400;color:#6b7280;margin-left:4px}
+.msgln{font:inherit;font-size:13px;font-weight:600;margin-left:12px;border:1px solid #cbd3dd;background:#fff;border-radius:16px;padding:3px 12px;cursor:pointer;color:#374151;vertical-align:4px}
+.msgln:hover{border-color:#2563eb;color:#2563eb}
+.mtpick{margin:6px 0 10px}.tcard{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.tcard .opt{display:block;border:1px solid #e3e6eb;border-radius:12px;padding:10px 14px;background:#fff;cursor:pointer;position:relative}
+.tcard .opt input{position:absolute;opacity:0}.tcard .opt b{font-size:15px;color:#111}.tcard .opt small{display:block;color:#6b7280;margin-top:2px;font-size:12.5px}
+.tcard .opt:has(input:checked){border-color:#2563eb;background:#f4f8ff}
+dialog.choose .chs button small{display:block;font-weight:400}
+dialog.choose.one{max-width:600px}.choose.one .chs{grid-template-columns:1fr}
+.choose.one .chs .minibtn{grid-column:1}
 </style>
 </head>
 <body>
@@ -665,6 +687,7 @@ iframe.tbframe{width:100%;height:78vh;border:0;background:#E9ECEF;border-radius:
         <label><input type="radio" name="mtype" value="임시회" checked>임시회</label>
         <label><input type="radio" name="mtype" value="긴급임시회">긴급 임시회</label>
       </span>
+      <span class="typeinfo" id="typeInfo" hidden><b></b><span></span><button type="button" id="typeBtn" title="정기회·임시회·긴급 임시회 바꾸기">바꾸기</button></span>
       <span class="m" id="ttlInfo"></span></h1>
     <div class="tools"><button type="button" class="btn qa tbbtn" id="tbBtn" title="필요한 문서 하나만 바로 만들기">도구함</button><button type="button" class="btn qa" id="qaBtn" title="심의 안건·회의 운영 Q&A 검색">Q&amp;A</button><button type="button" class="btn qa" id="ckBtn" title="지금 화면의 점검 결과">점검</button><button type="button" class="btn ghost sm" id="verBtn" title="버전 기록 보기"></button><button type="button" class="calbtn" id="calBtn" title="이달 일정 달력" aria-label="이달 일정 달력" aria-expanded="false"><img class="topcal" data-illo="calendar" alt=""></button></div>
     <div class="calpop" id="calPop" hidden></div>
@@ -1033,8 +1056,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.6.1", date:"2026-11-11"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.7.0", date:"2026-11-11"};
 const CHANGELOG = [
+  {v:"2.7.0", date:"2026-11-11", items:[
+    "처음 쓰는 사람 중심으로 화면 정리: 왼쪽 메뉴에는 정상 흐름만, 끝난 일은 '끝난 일 n개'로 접힘",
+    "'계획이 바뀌었어요' 단추: 날짜 변경·늦게 온 안건·안건 수정·철회·급한 회의를 고르면 그 회의에만 '생긴 일' 메뉴가 생김([없던 일로]로 없앰)",
+    "회의 종류는 회의를 만들 때 고르고, 맨 위에는 글자와 [바꾸기]만",
+    "메뉴·단추 문구를 쉬운 말로(안건 받기, 학교 기안 올리기, 회의 알리기, 회의 날 쓸 것 만들기 등. 단계 이름은 업무편람 용어 그대로)",
+    "메시지는 왼쪽 메뉴 대신 화면 머리의 ✉ 단추로"
+  ]},
+  {v:"2.6.2", date:"2026-11-11", items:[
+    "긴급 예정 안건: 처음 학교 기안 비고에 '긴급(자료 ○. ○. 제출 예정)', 개최 공문·공고문 안건명 뒤에 '(긴급, 자료 추후 배부)'를 넣음",
+    "긴급 예정 안건의 자료가 들어오면 처음 접수 안건 그대로 두고(추가 제출 기안·수정 공고 없음), '긴급 안건 자료' 카드에서 자료집(양해 안내 첫 장)과 위원 메시지 '긴급 안건 자료 발송 안내'를 만듦"
+  ]},
   {v:"2.6.1", date:"2026-11-11", items:[
     "안건명에 '긴급'이 들어 있으면(예: 긴급돌봄) 회의 종류를 긴급 임시회로 짐작해 기안문에 '임시회(긴급)'으로 나오던 문제를 고침. 회의 종류는 맨 위 정기회·임시회·긴급 임시회 단추로 정함"
   ]},
@@ -1364,7 +1398,7 @@ function buildMeetings(L){
 /* ---------- 기안번호 문자열 ---------- */
 function docRefDate(s){ const m = String(s).match(/\((\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/); return m ? new Date(+m[1],+m[2]-1,+m[3]) : null; }
 function formatRef(s){
-  // 대장에 적힌 기관 약칭(예: 한빛초-)을 그대로 쓴다. 없으면 학교·결재 정보의 '학교 문서번호 앞부분'
+  // 대장에 적힌 기관 약칭(예: 한빛초-)을 그대로 쓴다. 없으면 우리 학교 정보의 '학교 문서번호 앞부분'
   const m = String(s).trim().match(/^(.*?-)?\s*(\d+)\s*\((\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\)/);
   return m ? `${(m[1]||$("s_schoolPrefix").value.trim()).trim()}${m[2]}(${m[3]}. ${+m[4]}. ${+m[5]}.)` : String(s).trim();
 }
@@ -2094,7 +2128,7 @@ function renderAttendance(){
   const box = $("attBox"); if(!box || !S.members) return;
   const L = S.members.map((m,i)=>({m,i})).filter(({m}) => m.name.trim());
   box.innerHTML = L.length ? L.map(({m,i}) => `<button type="button" class="attchip ${m.present?"on":""}" data-att="${i}" aria-pressed="${!!m.present}"><b>${m.present?"○":"×"}</b> ${esc(m.name)}<span>${esc(m.cat.replace("위원",""))}${m.chair?" · 위원장":""}</span></button>`).join("")
-    : `<p class="hint" style="margin:0">위원 명단이 비어 있습니다. 기본 입력 → 위원 명단에서 먼저 넣으세요.</p>`;
+    : `<p class="hint" style="margin:0">위원 명단이 비어 있습니다. 처음 한 번 넣을 것 → 위원 명단에서 먼저 넣으세요.</p>`;
   box.querySelectorAll("[data-att]").forEach(b => b.onclick = () => {
     const m = S.members[+b.dataset.att]; m.present = !m.present;
     if(S.mt){ S.mt.att = Object.fromEntries(S.members.filter(x=>x.name.trim()).map(x=>[x.name.trim(), !!x.present])); saveMeetState(); }
@@ -2365,7 +2399,7 @@ function collect(){
   const kindParen = type==="정기회" ? "정기회" : "임시회";
   const typeName = type==="긴급임시회" ? "긴급임시회" : type;
   const n = m.hoe, gi = m.gi;
-  const mapA = a => ({no: a.no ? `${a.year}-${a.no}` : "", name:a.edit.trim(), fee:!!a.fee, added:!!a.added, proposer:a.proposer});
+  const mapA = a => ({no: a.no ? `${a.year}-${a.no}` : "", name:a.edit.trim(), fee:!!a.fee, added:!!a.added, proposer:a.proposer, planI:!!a.planI, planDue:a.planDue||""});
   const agendas = S.agendaState.filter(a=>a.on).map(mapA);
   const added = agendas.filter(a=>a.added);
   const d = {
@@ -2448,28 +2482,28 @@ const STEPS = [
 ];
 /* panel: 본문에 보일 묶음(data-view) — doc(문서 화면) | intake | msg | base:… */
 const VIEWS = {
-  "intake:main":   {who:"com", step:"intake", label:"안건 접수", mode:"intake", panel:"intake", hint:"안건 파일(.hwpx)과 붙임을 올려 번호를 매기고 최종 접수 때 안건집을 만듭니다. 최종 접수 뒤(안건대장 회의 포함)에는 새 파일이 추가·긴급 제출로 들어가고, 줄마다 [수정 제출]·[철회]를 누를 수 있습니다."},
-  "intake:doc":    {who:"sch", step:"intake", label:"심의 안건 제출", mode:"intake", panel:"doc", hint:"학교장 명의 '심의 안건 제출 및 회의 개최 요청' 기안문(.odt)을 내려받아 업무관리시스템에서 기안하고, 기안번호와 생산일자를 넣으면 대장에 붙일 줄이 만들어집니다."},
-  "intake:latedoc":{who:"sch", step:"intake", label:"안건 추가·수정·철회 기안", mode:"late", panel:"doc", when:()=>{ const r = curIntake(); return !!(r && r.items.some(it=>it.st || it.wd)); }, hint:"추가·긴급·수정 제출 안건과 철회 안건을 학교장 명의 기안 하나로 묶습니다. 철회가 있으면 제안자가 쓸 안건 철회서(.hwpx)도 받습니다. 업무관리시스템에서 기안한 뒤 기안번호를 넣으면 대장 줄과 위원장 공문의 '관련'이 채워집니다."},
-  "intake:msg":    {who:"com", step:"intake", label:"교직원 메시지", mode:"msg", panel:"msg", msg:"staff", hint:"안건을 모을 때 교직원에게 보내는 메시지입니다. 복사해서 메신저에 붙여 넣으세요."},
-  "prep:open":     {who:"com", step:"prep", label:"회의 개최", mode:"open", panel:"doc", hint:"개최 공문, 공고문, 안건 표지·목록, 방청 안내장, 부담경비 홍보·의견서, 안건 발송용 인덱스·봉투 라벨을 만듭니다. 긴급 임시회는 긴급 회의 개최 양식을 씁니다."},
-  "prep:sched":    {who:"sch", step:"prep", label:"회의 일정 변경", mode:"sched", panel:"doc", hint:"학교가 '회의 일정 변경 요청'을 기안하고, 위원장이 개최 수정 알림과 수정 공고를 보냅니다."},
-  "prep:change":   {who:"com", step:"prep", label:"개최 수정 (추가·철회·일정)", mode:"change", panel:"doc", hint:"안건이 추가·수정·철회되었거나 회의 일정이 바뀌었을 때 각 위원에게 보내는 개최 수정 알림과 개최 수정 공고를 만듭니다. '관련'에는 학교 개최 요청·추가 제출 기안이 들어갑니다. 위원장 접수 처리 기안이 필요한 학교만 위의 '접수 처리 기안(선택)'을 쓰세요."},
-  "prep:add":      {nav:false, parent:"prep:change", who:"com", step:"prep", label:"개최 수정 · 위원장 접수 처리 기안(선택)", mode:"add", panel:"doc", hint:"학교가 보낸 '추가·수정 제출' 기안을 받은 뒤, 학운위(위원장)가 '받아서 이번 회의에 올립니다'라고 처리하는 내부 기안입니다. 학교 기안은 안건접수 단계의 '안건 추가·수정·철회 기안'에서 만듭니다."},
-  "prep:msg":      {who:"com", step:"prep", label:"위원 메시지", mode:"msg", panel:"msg", msg:"member", hint:"운영위원에게 보내는 안내 메시지입니다. 복사해서 메신저나 문자에 붙여 넣으세요."},
-  "meet:main":     {who:"com", step:"meet", label:"회의 진행 준비물", mode:"progress", panel:"doc", hint:"출석을 입력하고 회의 일정·회의중 안내, 위원장 시나리오, 출석 등록부, 명패를 만듭니다. 의사 순서·안건 유형도 확인하세요."},
-  "meet:msg":      {who:"com", step:"meet", label:"회의 당일 안내 메시지", mode:"msg", panel:"msg", msg:"day", hint:"회의 날 아침 위원에게 보내는 안내입니다."},
-  "result:main":   {who:"com", step:"result", label:"회의 결과", mode:"result", panel:"doc", hint:"회의를 마친 뒤 회의록을 AI로 만들기 위한 회의 개요와 프롬프트, 안건처리 결과 이송 기안을 만듭니다. '사용 안내' 탭을 먼저 읽어 보세요."},
-  "result:promo":  {who:"sch", step:"result", label:"결과 홍보", mode:"promo", panel:"doc", hint:"위원장의 결과 이송을 받은 뒤 학교가 올리는 '심의결과 홍보' 내부결재 기안(.odt)입니다. 가정통신문과 홍보자료(심의 결과 홍보 HWPX)를 붙임으로 합니다."},
-  "base:school":   {base:true, label:"학교·결재 정보", panel:"base:school", hint:"처음 한 번 입력하면 이 컴퓨터에 저장됩니다."},
-  "base:meetings": {base:true, label:"회의 차수", panel:"base:meetings", hint:"회의(기수·회차)를 만들고 지웁니다. 안건대장을 불러오면 대장의 회의가 여기에 기록됩니다. 대장에 없는 회의(안건 접수부터 시작한 회의)는 지울 수 있습니다."},
-  "base:ledger":   {base:true, label:"안건대장 불러오기", panel:"base:ledger", hint:"쓰던 안건대장 엑셀이 있으면 불러오세요. 회의 목록과 다음 안건번호·문서번호·공고번호를 대장에서 읽습니다."},
+  "intake:main":   {who:"com", step:"intake", label:"안건 받기", mode:"intake", panel:"intake", hint:"안건 파일(.hwpx)과 붙임을 올려 번호를 매기고 최종 접수 때 안건집을 만듭니다. 최종 접수 뒤(안건대장 회의 포함)에는 새 파일이 추가·긴급 제출로 들어가고, 줄마다 [수정 제출]·[철회]를 누를 수 있습니다."},
+  "intake:doc":    {who:"sch", step:"intake", label:"학교 기안 올리기", sub:"안건 제출·회의 요청", mode:"intake", panel:"doc", hint:"학교장 명의 '심의 안건 제출 및 회의 개최 요청' 기안문(.odt)을 내려받아 업무관리시스템에서 기안하고, 기안번호와 생산일자를 넣으면 대장에 붙일 줄이 만들어집니다."},
+  "intake:latedoc":{who:"sch", step:"intake", sit:["late","mod"], label:"늦게 온·고친·거둔 안건 기안", sub:"추가·수정·철회 제출", mode:"late", panel:"doc", when:()=>{ const r = curIntake(); return !!(r && r.items.some(it=>it.st || it.wd)); }, hint:"추가·긴급·수정 제출 안건과 철회 안건을 학교장 명의 기안 하나로 묶습니다. 철회가 있으면 제안자가 쓸 안건 철회서(.hwpx)도 받습니다. 업무관리시스템에서 기안한 뒤 기안번호를 넣으면 대장 줄과 위원장 공문의 '관련'이 채워집니다."},
+  "intake:msg":    {nav:false, parent:"intake:main", who:"com", step:"intake", label:"교직원 메시지", mode:"msg", panel:"msg", msg:"staff", hint:"안건을 모을 때 교직원에게 보내는 메시지입니다. 복사해서 메신저에 붙여 넣으세요."},
+  "prep:open":     {who:"com", step:"prep", label:"회의 알리기", sub:"개최 공문·공고", mode:"open", panel:"doc", hint:"개최 공문, 공고문, 안건 표지·목록, 방청 안내장, 부담경비 홍보·의견서, 안건 발송용 인덱스·봉투 라벨을 만듭니다. 긴급 임시회는 긴급 회의 개최 양식을 씁니다."},
+  "prep:sched":    {who:"sch", step:"prep", sit:["sched"], label:"회의 날짜 바꾸기", sub:"학교 변경 요청 기안", mode:"sched", panel:"doc", hint:"학교가 '회의 일정 변경 요청'을 기안하고, 위원장이 개최 수정 알림과 수정 공고를 보냅니다."},
+  "prep:change":   {who:"com", step:"prep", sit:["sched","late","mod"], label:"바뀐 내용 다시 알리기", sub:"수정 알림·수정 공고", mode:"change", panel:"doc", hint:"안건이 추가·수정·철회되었거나 회의 일정이 바뀌었을 때 각 위원에게 보내는 개최 수정 알림과 개최 수정 공고를 만듭니다. '관련'에는 학교 개최 요청·추가 제출 기안이 들어갑니다. 위원장 접수 처리 기안이 필요한 학교만 위의 '접수 처리 기안(선택)'을 쓰세요."},
+  "prep:add":      {nav:false, parent:"prep:change", who:"com", step:"prep", label:"위원장 접수 기안", sub:"학교에서 요구할 때만", mode:"add", panel:"doc", hint:"학교가 보낸 '추가·수정 제출' 기안을 받은 뒤, 학운위(위원장)가 '받아서 이번 회의에 올립니다'라고 처리하는 내부 기안입니다. 학교 기안은 안건접수 단계의 '안건 추가·수정·철회 기안'에서 만듭니다."},
+  "prep:msg":      {nav:false, parent:"prep:open", who:"com", step:"prep", label:"위원 메시지", mode:"msg", panel:"msg", msg:"member", hint:"운영위원에게 보내는 안내 메시지입니다. 복사해서 메신저나 문자에 붙여 넣으세요."},
+  "meet:main":     {who:"com", step:"meet", label:"회의 날 쓸 것 만들기", sub:"시나리오·출석부·명패", mode:"progress", panel:"doc", hint:"출석을 입력하고 회의 일정·회의중 안내, 위원장 시나리오, 출석 등록부, 명패를 만듭니다. 의사 순서·안건 유형도 확인하세요."},
+  "meet:msg":      {nav:false, parent:"meet:main", who:"com", step:"meet", label:"회의 당일 안내 메시지", mode:"msg", panel:"msg", msg:"day", hint:"회의 날 아침 위원에게 보내는 안내입니다."},
+  "result:main":   {who:"com", step:"result", label:"회의록 쓰고 결과 보내기", mode:"result", panel:"doc", hint:"회의를 마친 뒤 회의록을 AI로 만들기 위한 회의 개요와 프롬프트, 안건처리 결과 이송 기안을 만듭니다. '사용 안내' 탭을 먼저 읽어 보세요."},
+  "result:promo":  {who:"sch", step:"result", label:"결과 알리기", sub:"학교 기안", mode:"promo", panel:"doc", hint:"위원장의 결과 이송을 받은 뒤 학교가 올리는 '심의결과 홍보' 내부결재 기안(.odt)입니다. 가정통신문과 홍보자료(심의 결과 홍보 HWPX)를 붙임으로 합니다."},
+  "base:school":   {base:true, label:"우리 학교 정보", panel:"base:school", hint:"처음 한 번 입력하면 이 컴퓨터에 저장됩니다."},
+  "base:meetings": {base:true, label:"회의 목록", panel:"base:meetings", hint:"회의(기수·회차)를 만들고 지웁니다. 안건대장을 불러오면 대장의 회의가 여기에 기록됩니다. 대장에 없는 회의(안건 접수부터 시작한 회의)는 지울 수 있습니다."},
+  "base:ledger":   {base:true, label:"쓰던 대장 불러오기", panel:"base:ledger", hint:"쓰던 안건대장 엑셀이 있으면 불러오세요. 회의 목록과 다음 안건번호·문서번호·공고번호를 대장에서 읽습니다."},
   "base:members":  {base:true, label:"위원 명단", panel:"base:members", hint:"기수별 위원 명단을 적고 '명단 반영'을 누르세요. 출석은 회의 단계에서 회의마다 입력합니다."},
   "qa":            {base:true, label:"운영 Q&A", panel:"qa", hint:"심의 대상인지, 안건 발송·공고·철회는 어떻게 하는지 등 회의 운영 문답을 검색합니다. 낱말을 띄어 쓰면 모두 들어간 문답만 찾습니다."},
   "tools":         {base:true, label:"도구함", panel:"tools", hint:"회의 차수·안건 접수 없이 필요한 문서 하나만 바로 만듭니다. 입력은 도구함에만 저장됩니다."},
   "start":         {base:true, label:"시작하기", panel:"start", hint:""}
 };
-const STEP_VIEWS = id => Object.keys(VIEWS).filter(k => VIEWS[k].step===id && VIEWS[k].nav!==false && (!VIEWS[k].when || VIEWS[k].when()));
+const STEP_VIEWS = id => Object.keys(VIEWS).filter(k => VIEWS[k].step===id && VIEWS[k].nav!==false && (!VIEWS[k].when || VIEWS[k].when()) && (!VIEWS[k].sit || VIEWS[k].sit.some(sitOn)));
 /* 단계마다 '받을 문서'로 세는 mode */
 const STEP_MODES = {intake:["intake"], prep:["open"], meet:["progress"], result:["result","promo"]};
 
@@ -2558,6 +2592,7 @@ function stepDate(stepId){
 function renderTop(){
   const sc = $("s_school").value.trim();
   $("ttlSchool").textContent = sc || "학교 미설정";
+  const ti = $("typeInfo"); if(ti){ const md = parseYmd($("m_date").value) || (S.cur && S.cur.date); ti.hidden = !S.cur; ti.querySelector("b").textContent = typeNow()==="긴급임시회" ? "긴급 임시회" : typeNow(); ti.querySelector("span").textContent = md ? ` · ${fMD(md)} ${$("m_time").value||""}` : ""; }
   $("ttlInfo").textContent = S.cur ? `${S.cur.year||""}학년도 · 재적 ${((S.applied&&S.applied.members)||S.members||[]).filter(x=>x.name&&x.name.trim()).length}명` : "회의를 고르거나 안건 접수부터 시작하세요";
   $("steps").innerHTML = STEPS.map((st,i) => {
     const s = S.cur ? stepStat(st.id) : {total:0, gen:0, done:false}, dt = stepDate(st.id);
@@ -2574,29 +2609,45 @@ const whoBox = w => w ? `<i class="wbox ${w}" title="${w==="sch"?"학교가 기�
 function navBadge(v){
   if(v==="base:members"){ return memDirty() ? ["반영 필요","need"] : S.applied && S.applied.at ? ["반영됨","ok"] : ["",""]; }
   if(v==="base:meetings") return [`${S.meetings.length}회`, S.meetings.length?"ok":""];
-  if(v==="base:ledger") return S.ledger ? [`안건 ${S.ledger.agendas.length}`,"ok"] : ["선택",""];
+  if(v==="base:ledger") return S.ledger ? [`안건 ${S.ledger.agendas.length}`,"ok"] : ["있으면",""];
   if(v==="base:school") return $("s_school").value.trim() ? ["",""] : ["입력 필요","need"];
   return ["",""];
 }
 function renderNav(){
   const base = ["base:school","base:ledger","base:meetings","base:members"];
-  let h = `<p class="nh">기본 입력</p><div class="nbox">` + base.map(v => { const [b,c] = navBadge(v); return `<button type="button" class="ni ${S.view===v || (VIEWS[S.view]||{}).parent===v ?"on":""}" data-view="${v}">${VIEWS[v].label}${b?`<i class="${c}">${b}</i>`:""}</button>`; }).join("") + `</div>`;
+  const on = v => S.view===v || (VIEWS[S.view]||{}).parent===v;
+  let h = `<p class="nh">처음 한 번 넣을 것</p><div class="nbox">` + base.map(v => { const [b,c] = navBadge(v); return `<button type="button" class="ni ${on(v)?"on":""}" data-view="${v}">${VIEWS[v].label}${b?`<i class="${c}">${b}</i>`:""}</button>`; }).join("") + `</div>`;
   const st = STEPS.find(s=>s.id===S.step);
   if(st){
-    h += `<p class="nh">${st.name}</p>` + STEP_VIEWS(st.id).map((v,i) => {
+    /* v2.7.0: 정상 흐름만 보이고, 끝난 일은 접고, 예외는 '생긴 일'로(상황 단추로 불러낸 것만) */
+    const views = STEP_VIEWS(st.id), item = (v, k) => {
       const V = VIEWS[v], b = navStepBadge(v);
-      const who = whoBox(V.who);
-      return `<button type="button" class="ni ${S.view===v || (VIEWS[S.view]||{}).parent===v ?"on":""} ${S.cur||st.id==="intake"?"":"dim"}" data-view="${v}"><span class="n">${i+1}</span>${who}<span class="lb">${V.label}</span>${b?`<i class="${b[1]||""}">${b[0]}</i>`:""}</button>`;
-    }).join("");
+      return `<button type="button" class="ni ${on(v)?"on":""} ${S.cur||st.id==="intake"?"":"dim"}" data-view="${v}" title="${esc(V.sub||"")}"><span class="n">${k}</span>${whoBox(V.who)}<span class="lb">${V.label}</span>${b?`<i class="${b[1]||""}">${b[0]}</i>`:""}</button>`;
+    };
+    const done = v => S.cur && !on(v) && navViewDone(v);
+    const normal = views.filter(v => !VIEWS[v].sit), sitv = views.filter(v => VIEWS[v].sit);
+    const sitOpen = sitv.filter(v => !done(v)), finished = [...normal.filter(done), ...sitv.filter(v => done(v) && sitOpen.length === 0)];
+    h += `<p class="nh">${st.name}</p>` + normal.filter(v => !finished.includes(v)).map((v, i) => item(v, normal.indexOf(v) + 1)).join("");
+    if(finished.length) h += `<button type="button" class="doneg" id="navDone" aria-expanded="${!!S.navDoneOpen}">✓ 끝난 일 ${finished.length}개 ${S.navDoneOpen?"▾":"▸"}</button>` + (S.navDoneOpen ? `<div class="donebox">${finished.map(v => item(v, "✓")).join("")}</div>` : "");
+    const act = SITS.filter(x => sitOn(x.id) && (x.steps||[]).includes(st.id) && !sitDone(x));   // 다 끝난 '생긴 일'은 끝난 일로 접힘
+    if(act.length){
+      h += `<p class="nh2">생긴 일 · ${act.map(x => esc(x.short)).join(", ")}</p>` + sitOpen.map((v, i) => item(v, i+1)).join("");
+      act.filter(x => x.hint && x.hint(st.id)).forEach(x => { h += `<p class="sithint">${x.hint(st.id)}</p>`; });
+      act.filter(x => S.mt && S.mt.sit && S.mt.sit[x.id]).forEach(x => { h += `<button type="button" class="doneg undo" data-unsit="${x.id}">'${esc(x.short)}' 없던 일로</button>`; });
+    }
   }
-  // 만든 이: 왼쪽 메뉴 맨 아래
+  if(S.cur) h += `<button type="button" class="sitbtn" id="sitBtn"><b>계획이 바뀌었어요</b><small>날짜 변경 · 늦게 온 안건 · 안건 수정·철회 · 급한 회의</small></button>`;
   // 그림과 만든 이는 한 묶음으로 화면 아래에 붙어 따라다님(.navfoot: sticky)
   h += `<div class="navfoot">${illo("woman", "peek-w")}<p class="credit navcredit">만든 이: <a href="https://blog.naver.com/oderobong/224428377136" target="_blank" rel="noopener">blog.naver.com/oderobong</a></p></div>`;
   $("nav").innerHTML = h;
+  const nd = $("navDone"); if(nd) nd.onclick = () => { S.navDoneOpen = !S.navDoneOpen; renderNav(); };
+  const sb = $("sitBtn"); if(sb) sb.onclick = pickSituation;
+  document.querySelectorAll("#nav [data-unsit]").forEach(b => b.onclick = () => unsetSituation(b.dataset.unsit));
   if(typeof navNext==="function") navNext();
   if(typeof navLater==="function") navLater();
 }
 function navStepBadge(v){
+  return null;   // v2.7.0: 메뉴 옆 진행 숫자·'변경 시' 표시는 빼고, 진행은 위 단계 원 아래에만 보여 줌
   if(!S.cur) return null;
   const V = VIEWS[v];
   if(V.panel==="doc" && STEP_MODES[V.step] && STEP_MODES[V.step].includes(V.mode)){ const s = stepStat(V.step); return s.total ? [`${s.gen}/${s.total}`, s.gen===s.total?"ok":""] : null; }
@@ -2614,8 +2665,8 @@ function go(view){
   S.view = view;
   const W = VIEWS[view];
   if(W.step) S.step = W.step;
-  $("crumb").textContent = view==="qa" ? "Q&A" : view==="tools" ? "도구함 · 필요한 것만 바로 만들기" : W.base ? "기본 입력" : `${STEPS.findIndex(s=>s.id===W.step)+1}단계 · ${STEPS.find(s=>s.id===W.step).name}${S.cur?" · "+stepDate(W.step).t:""}`;
-  $("vTitle").innerHTML = whoBox(W.who) + esc(W.label) + (W.panel==="msg" ? `<span class="tbubw">${illo("bubble","tbub")}</span>` : "");   // 메시지 화면: 흐린 큰 말풍선
+  $("crumb").textContent = view==="qa" ? "Q&A" : view==="tools" ? "도구함 · 필요한 것만 바로 만들기" : W.base ? "처음 한 번 넣을 것" : `${STEPS.findIndex(s=>s.id===W.step)+1}단계 · ${STEPS.find(s=>s.id===W.step).name}${S.cur?" · "+stepDate(W.step).t:""}`;
+  $("vTitle").innerHTML = whoBox(W.who) + esc(W.label) + (W.sub ? ` <span class="vsub">${esc(W.sub)}</span>` : "") + (W.panel==="msg" ? `<span class="tbubw">${illo("bubble","tbub")}</span>` : "");   // 메시지 화면: 흐린 큰 말풍선
   $("main").dataset.v = view;
   $("doneBox").hidden = !!W.base || !S.cur;
   $("stepDone").checked = !!(S.mt && S.mt.done[S.step]);
@@ -2655,6 +2706,73 @@ function foldUpdate(ck){
   const need = (vis("m_date") && !md) || (ck||[]).some(x => x[0]==="warn" && FOLD_WARN.test(x[1]));
   if(need) f.open = true;
 }
+/* ===== 상황 단추 (v2.7.0): "계획이 바뀌었어요" =====
+   왼쪽 메뉴에는 정상 흐름만 보이고, 예외(일정 변경·늦게 온 안건·수정·철회·긴급 임시회)는 사용자가 이 단추로 고른 회의에서만
+   '생긴 일' 묶음으로 나타난다(사용자 결정). 이미 그런 기록이 있는 회의(예: 늦게 온 안건이 있음)는 고르지 않아도 나타난다.
+   고른 것은 회의별 저장값 S.mt.sit = {sched, late, mod, urgent}. 다 끝난 '생긴 일'은 '끝난 일'로 접힌다. */
+const SITS = [
+  {id:"sched", short:"날짜 변경", t:"회의 날짜나 장소가 바뀌었어요", s:"학교가 변경 요청 기안을 올리고, 학운위가 바뀐 내용을 다시 알려요", steps:["prep"], views:["prep:sched","prep:change"], go:"prep:sched",
+    ev:() => !!(S.mt && S.mt.sched && typeof schedChanged==="function" && schedChanged())},
+  {id:"late", short:"늦게 온 안건", t:"안건이 늦게 들어왔어요", s:"추가로 받거나 긴급 안건으로 받아요", steps:["intake","prep"], views:["intake:latedoc","prep:change"], go:"intake:main",
+    ev:() => { const r = curIntake(); return !!(r && r.items.some(it => it.st==="add" || it.st==="urgent")); }, hint: st => sitLateHint(st)},
+  {id:"mod", short:"안건 수정·철회", t:"들어온 안건을 고치거나 거둬들여요", s:"안건 받기에서 그 줄의 [고친 파일 받기]·[거둬들이기(철회)]를 눌러요", steps:["intake","prep"], views:["intake:latedoc","prep:change"], go:"intake:main",
+    ev:() => { const r = curIntake(); return !!(r && r.items.some(it => it.st==="mod" || it.wd)); }, hint: st => sitLateHint(st)},
+  {id:"urgent", short:"급한 회의", t:"회의를 급하게 열어야 해요", s:"7일 전에 알릴 시간이 없을 때(긴급 임시회). 회의 종류가 긴급 임시회로 바뀌어요", steps:["intake","prep"], views:[], go:"prep:open",
+    ev:() => typeNow()==="긴급임시회", hint: st => st==="prep" ? "회의 알리기에서 긴급 회의 개최 공문이, 위원 메시지에 '긴급 임시회 안내'가 나와요. 긴급 사유를 꼭 적으세요." : "긴급 임시회는 7일 전 공고 기한을 적용하지 않아요. 안건을 받는 대로 접수를 마치세요."}
+];
+function sitLateHint(st){
+  if(st!=="intake") return "";
+  const r = curIntake();
+  if(r && !r.final) return "아직 접수를 마치기 전이라 늦게 온 안건도 '안건 받기'에 그냥 넣으면 돼요.";
+  if(!STEP_VIEWS("intake").includes("intake:latedoc")) return "'안건 받기'에서 늦게 온 안건을 넣거나, 줄마다 [고친 파일 받기]·[거둬들이기]를 누르면 기안 메뉴가 생겨요.";
+  return "";
+}
+function sitOn(id){ const x = SITS.find(s => s.id===id); return !!(S.cur && S.mt && (((S.mt.sit)||{})[id] || (x && x.ev()))); }
+/* 메뉴의 끝남 표시: 정상 흐름은 viewDone, 생긴 일 메뉴는 기안번호를 넣었거나 문서를 받았으면 */
+function navViewDone(v){
+  const rec = curIntake(), H = rec || S.mt || {};
+  if(v==="intake:latedoc") return !!(rec && (lateDocOf(rec)||{}).no) && !lateBatch(rec).some(x => !x.it.done);
+  if(v==="prep:sched") return !!(H.schedDoc && H.schedDoc.no);
+  if(v==="prep:change") return !!(S.mt && Object.keys(S.mt.gen||{}).some(k => /:change$/.test(k)));
+  return viewDone(v);
+}
+function sitDone(x){ const vs = x.views.filter(v => STEP_VIEWS(VIEWS[v].step).includes(v)); return x.views.length > 0 && vs.length === x.views.length && vs.every(navViewDone); }
+async function pickSituation(){
+  if(!S.cur){ toast("먼저 회의를 고르세요"); return; }
+  const id = await choose("어떤 일이 생겼나요?", `<p class="small" style="margin:0 0 10px">고르면 왼쪽 메뉴에 할 일이 생깁니다. 일이 없어지면 [없던 일로]를 누르세요.</p>`,
+    [...SITS.map(x => ({v:x.id, t:x.t, sub:x.s, hl:false})), {v:"", t:"닫기"}], "one");
+  if(!id) return;
+  const x = SITS.find(s => s.id===id);
+  S.mt.sit = Object.assign({}, S.mt.sit, {[id]:true}); saveMeetState();
+  if(id==="urgent") setMeetingType("긴급임시회");
+  if(id==="sched") S.mt.f.schedFocus = true;
+  go(x.go);
+  toast(id==="urgent" ? "회의 종류를 긴급 임시회로 바꿨어요. 회의 알리기에서 긴급 회의 개최 공문을 만드세요" : `'${x.short}' 할 일을 왼쪽 메뉴 '생긴 일'에 넣었어요`);
+}
+function unsetSituation(id){
+  const x = SITS.find(s => s.id===id); if(!x || !S.mt) return;
+  if(id!=="urgent" && x.ev()){ toast(id==="sched" ? "회의 날짜 바꾸기 화면에 바뀐 일정이 남아 있어요. 그 화면에서 처음 일정으로 되돌리면 사라져요" : "안건 받기에 늦게 온·고친·거둔 안건 줄이 남아 있어요. 그 줄을 빼거나 철회를 취소하면 사라져요"); return; }
+  const sit = Object.assign({}, S.mt.sit); delete sit[id]; S.mt.sit = sit; saveMeetState();
+  if(id==="urgent") setMeetingType(S.cur && +S.cur.hoe===1 ? "정기회" : "임시회");
+  renderNav(); renderTop(); toast(`'${x.short}'을(를) 없던 일로 했어요`);
+}
+/* 회의 종류: 맨 위 글자 옆 [바꾸기], 회의를 만들 때 고르기 */
+const MTYPES = [{v:"정기회", t:"정기회", sub:"학교 규정에 정해진 때 여는 회의"}, {v:"임시회", t:"임시회", sub:"필요할 때 여는 회의"}, {v:"긴급임시회", t:"긴급 임시회", sub:"급해서 7일 전에 알릴 수 없는 회의"}];
+function setMeetingType(t){
+  const r = document.querySelector(`input[name=mtype][value="${t}"]`); if(!r) return;
+  r.checked = true; r.dispatchEvent(new Event("change", {bubbles:true}));
+  renderTop(); renderNav();
+}
+async function changeMeetingType(){
+  if(!S.cur) return;
+  const t = await choose("어떤 회의인가요?", `<p class="small" style="margin:0 0 10px">지금: <b>${typeNow()==="긴급임시회" ? "긴급 임시회" : typeNow()}</b>. 공문·공고문·시나리오의 회의 이름과 기한 점검이 바뀝니다.</p>`,
+    [...MTYPES.map(x => ({v:x.v, t:x.t, sub:x.sub, hl:x.v===typeNow()})), {v:"", t:"닫기"}], "one");
+  if(t && t !== typeNow()){ setMeetingType(t); toast(`회의 종류를 ${t==="긴급임시회"?"긴급 임시회":t}(으)로 바꿨어요`); }
+}
+function meetTypePicker(def){
+  return `<div class="f mtpick"><span>어떤 회의인가요?</span><div class="tcard">${MTYPES.map(x => `<label class="opt"><input type="radio" name="nm_type" value="${x.v}" ${x.v===def?"checked":""}><b>${x.t}</b><small>${x.sub}</small></label>`).join("")}</div></div>`;
+}
+
 /* ===== 메시지 (교직원·위원) =====
    문구 틀(MSG_TPL)의 {자리}를 회의 정보로 채워 보여 준다. 사용자가 고친 틀은 STORE.msgs에 저장한다.
    예시는 실제 학교 메시지를 바탕으로 하되 사람 이름·줌 정보 같은 개인정보는 빼고 {자리}로 바꿨다. */
@@ -2671,6 +2789,8 @@ const MSG_TPL = {
     tpl:"위원님. 안녕하세요.\n\n{긴급사유}(으)로 아래와 같이 긴급 임시회를 개최하게 되었습니다.\n\n위원님들의 너른 양해를 부탁드립니다.\n\n1. 일시: {회의일시}\n2. 장소: {장소}\n3. 안건: {안건한줄}\n4. 비고: 긴급 사안으로 조속한 심의가 필요한 점 다시 한번 양해 부탁드립니다.\n\n상세 안건 자료는 첨부파일을 이메일로 전달드리오니 사전에 검토 부탁드립니다. 관련하여 문의 사항이 있으시면 언제든 연락 주시기 바랍니다."},
   mem_add: {grp:"member", name:"긴급 안건 추가 안내", sub:"긴급 제출 안건이 있을 때 · 기 배부 안건집 미포함", when:()=>urgentAdded().length>0,
     tpl:"{회의날짜} 회의에서 논의될 긴급 안건입니다.\n{긴급안건}\n기 배부된 안건집에는 포함되지 않은 내용이오니, 참석 전 첨부파일을 꼭 확인해 주시기 바랍니다.\n\n✅ 현장에서도 출력물을 나누어 드릴 예정입니다.\n✅ 안건집과 함께 지참해 주시면 감사하겠습니다."},
+  mem_planDoc: {grp:"member", name:"긴급 안건 자료 발송 안내", sub:"긴급 예정 안건의 자료를 보낼 때 · 공고에 '자료 추후 배부'", when:()=>(S.agendaState||[]).some(a=>a.planI),
+    tpl:"위원님. 안녕하세요.\n{회의날짜} 회의 안건 중 '자료 추후 배부'로 안내드린 긴급 안건의 자료를 보내드립니다.\n{긴급예정안건}\n자료 준비가 늦어 7일 전에 보내드리지 못한 점 양해 부탁드립니다. 회의 전에 첨부파일을 꼭 확인해 주시기 바랍니다."},
   mem_day: {grp:"member day", name:"회의 당일 안내", sub:"일시·장소 + 줌 ID·비밀번호·링크",
     tpl:"{인사말}\n오늘 개최되는 운영위원회 {회의종류} 안내드립니다 ^^\n일시: {회의일시}\n장소: {장소}\n{줌정보}"}
 };
@@ -2713,6 +2833,7 @@ function msgVars(){
     "장소": place + (/줌|zoom|비대면/i.test(place) && !zoomLines ? "(당일 아침 줌 링크 발송)" : ""),
     "회의종류": typeNow()==="정기회" ? "정기회" : "임시회",
     "긴급사유": $("m_reason").value.trim() || "○○ 사유",
+    "긴급예정안건": (S.agendaState||[]).filter(a=>a.planI).map(a=>`- ${a.edit||a.name}`).join("\n") || "- (긴급 예정 안건 없음)",
     "긴급안건": urgentAdded().map(a=>`- ${a.edit||a.name}`).join("\n") || "- (긴급 제출 안건 없음)",
     "줌정보": zoomLines
   };
@@ -2744,10 +2865,10 @@ function fillMsg(tpl){
 }
 /* {자리}마다 값이 어디서 오는지 (화면에 함께 보여 준다) */
 const VAR_SRC = {
-  "인사말":"기본 입력 → 학교·결재 정보 '메시지 인사말'", "계절인사":"회의일의 달로 자동", "연락처":"기본 입력 → 학교·결재 정보 '연락받을 사람'(비우면 '간사 + 담당자명')",
+  "인사말":"처음 한 번 넣을 것 → 우리 학교 정보 '메시지 인사말'", "계절인사":"회의일의 달로 자동", "연락처":"처음 한 번 넣을 것 → 우리 학교 정보 '연락받을 사람'(비우면 '간사 + 담당자명')",
   "회의시기":"위 '회의 예정 시기' 칸 (비우면 회의일의 달 → 'O월 중')", "다음회의":"위 '다음 회의 예정' 칸", "개최일":"회의 날짜 (제목줄 회의 · 개최 준비의 회의일)",
   "작년안건":"안건대장에서 작년 같은 달 회의 안건 (대장이 없으면 업무편람의 월별 활동 예시)", "안건목록":"이 회의에 접수된 안건", "안건수":"이 회의 안건 수", "안건한줄":"이 회의 안건(한 줄로)", "첫안건":"첫 번째 안건",
-  "회의일시":"회의 날짜·시각", "회의날짜":"회의 날짜", "장소":"회의 장소", "회의종류":"회의 종류", "긴급사유":"개최 준비 → 회의 개최 '긴급 사유'", "긴급안건":"긴급 제출 안건", "줌정보":"위 줌 ID·비밀번호·링크 칸"
+  "회의일시":"회의 날짜·시각", "회의날짜":"회의 날짜", "장소":"회의 장소", "회의종류":"회의 종류", "긴급사유":"개최 준비 → 회의 개최 '긴급 사유'", "긴급안건":"긴급 제출 안건", "긴급예정안건":"긴급 예정(자료 늦어요) 안건", "줌정보":"위 줌 ID·비밀번호·링크 칸"
 };
 let msgCur = null;
 function renderMsgView(grp){
@@ -2799,7 +2920,7 @@ async function withHwpConverted(fileList){
 function loadIntakes(){ try{ return JSON.parse(localStorage.getItem(STORE.intakes)||"{}"); }catch(e){ return {}; } }
 function saveIntakes(all){ try{ localStorage.setItem(STORE.intakes, JSON.stringify(all)); }catch(e){ toast("이 컴퓨터에 저장하지 못했습니다(저장 공간 부족)"); } }
 function curIntake(){ return S.cur && S.cur.src==="intake" ? loadIntakes()[S.cur.key] : null; }
-function putIntake(rec){ const all = loadIntakes(); all[rec.key] = rec; saveIntakes(all); syncIntakeMeeting(rec); S.agDirty = true; }   // agDirty: 문서 화면으로 갈 때 안건 목록을 다시 읽음
+function putIntake(rec){ const all = loadIntakes(); all[rec.key] = rec; saveIntakes(all); syncIntakeMeeting(rec); S.agDirty = true; if(typeof renderNav==="function" && $("nav")) renderNav(); }   // 늦게 온 안건 등으로 '생긴 일' 메뉴가 바뀔 수 있음   // agDirty: 문서 화면으로 갈 때 안건 목록을 다시 읽음
 const schoolYear = d => { d = d || new Date(); return d.getMonth() < 2 ? d.getFullYear()-1 : d.getFullYear(); };   // 학년도: 3월부터
 /* 안건번호: 접수 순서대로. 수정 제출(of)은 원래 안건의 번호를 쓴다.
    rec.skip: 줄을 지울 때 '번호 그대로'를 고른 빈 번호(건너뜀) */
@@ -2824,7 +2945,7 @@ function intakeRef(rec){
 /* 최초 접수 안건(철회 제외)과 추가 안건을 회의 목록(S.meetings)의 회의 하나로 */
 function intakeMeeting(rec){
   const items = activeItems(rec).map(({it, i}) => ({row:0, year:rec.year, gi:rec.gi, hoe:rec.hoe, cum:String(rec.cum||""), no:String(itemNum(rec, i)), name:it.title,
-    proposer:proposerOf(it), intake: it.st ? (it.ref||"") : (it.ledgerRef || intakeRef(rec)), date: parseYmd(rec.mdate), resultDoc:"", kindI:it.kind, feeI:!!it.fee, stI:it.st||"", planI:!!it.plan, recv:it.recvDate}));
+    proposer:proposerOf(it), intake: it.st ? (it.ref||"") : (it.ledgerRef || intakeRef(rec)), date: parseYmd(rec.mdate), resultDoc:"", kindI:it.kind, feeI:!!it.fee, stI:it.st||"", planI:!!it.plan, planDue:it.plan ? it.plan.due : "", recv:it.recvDate}));
   return {key:rec.key, gi:rec.gi, hoe:rec.hoe, cum:String(rec.cum||""), year:rec.year, date:parseYmd(rec.mdate), items, src:"intake", fromLedger:!!rec.fromLedger};
 }
 const activeItems = rec => rec.items.map((it, i) => ({it, i})).filter(x => !x.it.wd && x.it.st !== "mod");   // 철회·수정본 제외
@@ -2962,20 +3083,21 @@ function coverDocFor(rec, list, head, kindLabel, letter){
 /* 추가 안건집 첫 장: 위원에게 드리는 안내(학교에서 쓰던 '긴급 안건 추가' 안내 모양) + 추가 안건 목록 */
 function lateLetterBlocks(d, list, kind){
   const kindName = d.type==="정기회" ? "정기회" : "임시회";
-  const head = kind==="urgent" ? "긴급 안건 추가" : kind==="mod" ? "안건 수정" : "안건 추가";
+  const head = kind==="plan" ? "긴급 안건 자료" : kind==="urgent" ? "긴급 안건 추가" : kind==="mod" ? "안건 수정" : "안건 추가";
   const t = $("m_time").value, place = $("m_place").value.trim();
   const W = PW - 2, B = [], box = [[0,0,1,0.7],[1,0,1,0.7]];
   const body = [
     {t:`제${d.gi}기`, sz:22, al:"l", ls:140}, {t:d.committee, sz:22, al:"l", ls:140}, {t:`제${d.n}회 ${kindName} ${head}`, sz:22, al:"l", ls:140}, {t:"", sz:14},
     {t:"위원님, 안녕하십니까.", sz:13, al:"l", ls:180},
     {t:"학교 교육 발전을 위해 항상 깊은 관심과 애정을 보내주시는 위원님께 진심으로 감사드립니다.", sz:13, al:"l", ls:180}, {t:"", sz:10},
-    ...(kind==="urgent" ? [{t:`이번 ${kindName} 안건 중 긴급 제출하게 된 안건이 있어 일부 안건이 7일 전 발송되지 못한 점 널리 양해 부탁드립니다. 긴급한 심의가 필요한 사안인 만큼 회의 당일 상세한 설명을 통해 원활한 심의가 이루어지도록 최선을 다하겠습니다.`, sz:13, al:"l", ls:180}, {t:"", sz:10}]
+    ...(kind==="plan" ? [{t:`이번 ${kindName} 공고에서 '긴급(자료 추후 배부)'로 안내드린 안건의 자료를 보내드립니다. 자료 준비가 늦어 7일 전에 보내드리지 못한 점 널리 양해 부탁드립니다. 회의 당일 상세한 설명을 통해 원활한 심의가 이루어지도록 최선을 다하겠습니다.`, sz:13, al:"l", ls:180}, {t:"", sz:10}]
+      : kind==="urgent" ? [{t:`이번 ${kindName} 안건 중 긴급 제출하게 된 안건이 있어 일부 안건이 7일 전 발송되지 못한 점 널리 양해 부탁드립니다. 긴급한 심의가 필요한 사안인 만큼 회의 당일 상세한 설명을 통해 원활한 심의가 이루어지도록 최선을 다하겠습니다.`, sz:13, al:"l", ls:180}, {t:"", sz:10}]
       : [{t:`이번 ${kindName}에 ${kind==="mod"?"수정 제출된":"추가로 제출된"} 안건을 보내드립니다. 기존 안건집과 함께 회의 전에 검토 부탁드립니다.`, sz:13, al:"l", ls:180}, {t:"", sz:10}]),
     {t:`회의 일시: ${d.md ? `${fDotW(d.md)} ${t}` : ""}`, sz:13, al:"l", ls:180},
     {t:`회의 장소: ${place}`, sz:13, al:"l", ls:180}
   ];
   B.push(Bk.form({cols:[W], rows:[{h:420, cells:[{va:"t", m:[40,34,20,34], p:body}]}], hl:box, vl:box}), GAP(16));
-  B.push(P(`${head === "안건 수정" ? "수정" : "추가"} 안건 목록`, {sz:14, b:1}), GAP(6));
+  B.push(P(kind==="plan" ? "긴급 안건 목록" : `${head === "안건 수정" ? "수정" : "추가"} 안건 목록`, {sz:14, b:1}), GAP(6));
   B.push(Bk.tbl([16,84], [["안건번호","안 건 명"], ...list.map(a=>[a.no, {t:a.name, al:"l"}])], {head:1, rowH:2400}));
   return B;
 }
@@ -3067,13 +3189,15 @@ function createIntakeMeeting(){
   const all = loadIntakes();
   if(all[key] && !confirm(`제${gi}기 제${hoe}회 접수 기록이 이미 있습니다. 그 기록을 열까요? (취소하면 아무것도 바꾸지 않습니다)`)) return;
   const rec = all[key] || {key, year:y, gi, hoe, cum, mdate:$("nm_date").value, startNo: nextAgendaNo(y, key), items:[], doc:{}};
+  const mtype = (document.querySelector("input[name=nm_type]:checked")||{}).value;   // v2.7.0: 회의를 만들 때 회의 종류를 고름
   putIntake(rec);
   IK.loose = []; IK.hwp = []; IK.conv = [];
   S.view = "intake:main";
   selectMeeting(key);
+  if(mtype && !all[key]) setMeetingType(mtype);
 }
 
-/* ----- 기본 입력 → 회의 차수: 만들기·목록·지우기 ----- */
+/* ----- 처음 한 번 넣을 것 → 회의 목록: 만들기·목록·지우기 ----- */
 function renderMeetings(){
   const box = $("mtBox"); if(!box) return;
   const df = newMeetingDefaults(), all = loadIntakes();
@@ -3090,7 +3214,8 @@ function renderMeetings(){
   box.innerHTML = `<div class="card"><h3>새 회의 차수 만들기</h3>
 <div class="row3"><label class="f"><span>학년도 (3월부터)</span><input type="number" id="nm_year" value="${df.year}"></label><label class="f"><span>기수</span><input type="number" id="nm_gi" value="${df.gi}"></label><label class="f"><span>회차</span><input type="number" id="nm_hoe" value="${df.hoe}"></label></div>
 <div class="row3"><label class="f"><span>누년회차 (대장에 쓰는 경우)</span><input type="number" id="nm_cum" value="${df.cum}"></label><label class="f"><span>회의 예정일 (모르면 비움)</span><input type="date" id="nm_date"></label><span></span></div>
-<div class="row-btns"><button type="button" class="btn hl" id="nm_go">만들고 안건 접수로</button><span class="hint" style="margin:0">${S.ledger ? "안건대장의 마지막 회의 다음 회차로 채웠습니다." : "안건대장을 불러오면 기수·회차와 다음 안건번호를 대장에서 이어 받습니다."}</span></div></div>
+${meetTypePicker(df.hoe===1 ? "정기회" : "임시회")}
+<div class="row-btns"><button type="button" class="btn hl" id="nm_go">만들고 안건 받기로</button><span class="hint" style="margin:0">${S.ledger ? "안건대장의 마지막 회의 다음 회차로 채웠습니다." : "안건대장을 불러오면 기수·회차와 다음 안건번호를 대장에서 이어 받습니다."}</span></div></div>
 <div class="card"><h3>회의 목록</h3>
 <p class="hint" style="margin:0 0 8px"><span class="badge b-mod">안건대장</span> 불러온 대장에 있는 회의(지울 수 없음) · <span class="badge b-add">안건접수</span> 이 프로그램에서 안건 접수부터 만든 회의(지울 수 있음 — 보통 학교 개최 요청 기안 전에 일정이 취소되었을 때)</p>
 ${S.meetings.length ? `<table class="ag mtlist"><tr><th>구분</th><th>회의</th><th>회의일</th><th>안건</th><th>상태</th><th></th></tr>${rows}</table>` : emptyBox(`<p class="hint" style="margin:0">아직 회의가 없습니다. 위에서 만들거나 안건대장을 불러오세요.</p>`, "calendar")}</div>`;
@@ -3136,7 +3261,7 @@ function renderIntake(view){
   const pick = `<div class="card ikhead"><label class="f" style="margin:0;flex:1"><span>회의 차수</span><select class="inp" id="ikMeet">${S.cur ? "" : `<option value="">회의 차수 고르기</option>`}${S.meetings.map(m=>`<option value="${m.key}" ${S.cur&&S.cur.key===m.key?"selected":""}>${lab(m)}</option>`).join("")}</select></label>
 <button type="button" class="btn ghost sm" id="ikNewMeet">회의 차수 만들기·지우기</button></div>`;
   if(!rec){
-    box.innerHTML = pick + intakeGuide(false) + `<div class="card">${emptyBox(`<p class="hint" style="margin:0">${S.meetings.length ? "위에서 회의 차수를 고르세요." : "아직 회의가 없습니다. <b>기본 입력 → 회의 차수</b>에서 새 회의 차수를 만들거나 안건대장을 불러오세요."}</p>`)}</div>`;
+    box.innerHTML = pick + intakeGuide(false) + `<div class="card">${emptyBox(`<p class="hint" style="margin:0">${S.meetings.length ? "위에서 회의 차수를 고르세요." : "아직 회의가 없습니다. <b>처음 한 번 넣을 것 → 회의 목록</b>에서 새 회의 차수를 만들거나 안건대장을 불러오세요."}</p>`)}</div>`;
     wirePick(); wireAgForm(); return;
   }
   // 예전에 성명 칸에 직위까지 들어간 기록 바로잡기("교사 홍길동" → 직위 교사, 성명 홍길동)
@@ -3149,22 +3274,22 @@ function renderIntake(view){
   const hasData = n => !!S.files[n];
   const row = ({it, i}) => {
     const no = itemNo(rec, i), miss = it.fileName && !hasData(it.fileName) && !(late && !it.st && !rec.fromLedger);
-    const warn = [!it.title && "안건명 빈칸", !it.name && !SOLO_POS.test(it.pos||"") && "담당자 빈칸", miss && "파일 다시 올리기"].filter(Boolean);
+    const warn = [!it.title && "안건명을 넣으세요", !it.name && !SOLO_POS.test(it.pos||"") && "제안자를 넣으세요", miss && "파일을 다시 넣어 주세요"].filter(Boolean);
     const kindCell = it.wd ? `<span class="badge b-warn">철회</span><div class="small">${esc(it.wd.date||"")}</div>`
       : it.st ? lateCell(it, cut) : late && !rec.fromLedger ? `<span class="badge b-ok">최초 접수</span>` : "";   // 대장 안건의 '대장' 표시는 안건명 아래
     const acts = !late ? `<button type="button" class="x" data-act="del" aria-label="안건 빼기" title="목록에서 빼기">×</button>`
       : it.wd ? `<button type="button" class="minibtn" data-act="unwd">철회 취소</button>`
-      : `${it.st!=="mod" ? `<button type="button" class="minibtn" data-act="mod" title="이 안건을 고친 파일을 올립니다(원래 번호 그대로)">수정 제출</button>` : ""}<button type="button" class="minibtn" data-act="wd">철회</button>`;
+      : `${it.st!=="mod" ? `<button type="button" class="minibtn" data-act="mod" title="이 안건을 고친 파일을 올립니다(원래 번호 그대로) — 수정 제출">고친 파일 받기</button>` : ""}<button type="button" class="minibtn" data-act="wd" title="안건을 거두어들입니다 — 철회">거둬들이기(철회)</button>`;
     // 줄 빼기(×)는 맨 오른쪽 칸 가운데: 모든 줄(잘못 넣은 줄·시험한 줄). 안건을 거두어들이는 것은 [철회]
     const delBtn = late ? `<button type="button" class="x" data-act="del" aria-label="안건 빼기" title="목록에서 빼기(잘못 넣은 줄·시험한 줄)">×</button>` : "";
     const ledg = rec.fromLedger && !it.st;   // 대장 안건: 안건명 아래에 '대장' 표시 + 파일 등록
     const typed = !ledg && (it.typed || !it.fileName) && it.st!=="mod";   // 직접 입력한 안건: 파일은 나중에
     const sub = it.plan ? `<span class="badge b-warn">긴급${it.fileName ? "" : " 예정"}</span> <span class="nw">${it.fileName ? `자료 받음 ${esc(fMD(parseYmd(it.plan.got))||"")}` : `자료 ${esc(fMD(parseYmd(it.plan.due))||"날짜 미정")} 제출 예정`}</span>`
       : ledg ? `<span class="badge b-ok">대장</span> ${it.fileName ? esc(it.fileName) : `<span class="nw">파일 없음</span>`}`
-      : typed && !it.fileName ? `<span class="badge b-typed">직접 입력</span> <span class="nw">파일 없음</span>`
+      : typed && !it.fileName ? `<span class="badge b-typed">파일은 나중에</span>`
       : it.fileName ? esc(it.fileName) : "";
-    const fileBtn = (ledg || typed) && !it.wd ? `<button type="button" class="minibtn fbtn ${it.fileName?"":"hl"}" data-act="setfile" title="${it.fileName ? "다른 한글 안건 파일(.hwpx)로 바꿉니다" : ledg ? "이 대장 안건의 한글 안건 파일(.hwpx)을 넣으면 안건집을 만들 수 있습니다" : "지금은 제목만 들어가 있습니다. 한글 안건 파일(.hwpx)을 넣으면 안건집 본문에도 들어갑니다."}">${it.fileName ? "파일 바꾸기" : "+ 파일 등록"}</button>` : "";
-    const planBtn = !it.wd && it.st!=="mod" && (!it.fileName || it.plan) ? `<button type="button" class="minibtn planbtn ${it.plan?"on":""}" data-act="plan" title="위원장과 미리 긴급 안건으로 협의했으면 자료 제출 예정일과 사유를 적습니다">긴급 예정 ▾</button>` : "";
+    const fileBtn = (ledg || typed) && !it.wd ? `<button type="button" class="minibtn fbtn ${it.fileName?"":"hl"}" data-act="setfile" title="${it.fileName ? "다른 한글 안건 파일(.hwpx)로 바꿉니다" : ledg ? "이 대장 안건의 한글 안건 파일(.hwpx)을 넣으면 안건집을 만들 수 있습니다" : "지금은 제목만 들어가 있습니다. 한글 안건 파일(.hwpx)을 넣으면 안건집 본문에도 들어갑니다."}">${it.fileName ? "파일 바꾸기" : "파일 넣기"}</button>` : "";
+    const planBtn = !it.wd && it.st!=="mod" && (!it.fileName || it.plan) ? `<button type="button" class="minibtn planbtn ${it.plan?"on":""}" data-act="plan" title="위원장과 미리 긴급 안건으로 협의했으면 자료 제출 예정일과 사유를 적습니다">긴급 예정(자료 늦어요) ▾</button>` : "";
     const ops = guessOpinion(it.title), urgentNow = !!it.plan || it.st==="urgent" || (!late && cut && parseYmd(it.recvDate) > cut);
     const opNeed = ops.length && urgentNow && !it.wd, opDays = it.op && it.op.from && it.op.to ? dayDiff(parseYmd(it.op.from), parseYmd(it.op.to)) + 1 : 0;
     const planRow = IK.planOpen===it.id || (opNeed && IK.opOpen===it.id) ? planRowHtml(it, ops, opNeed, opDays) : "";
@@ -3179,23 +3304,18 @@ function renderIntake(view){
 <td><input type="date" class="inp d" data-f="recvDate" value="${esc(it.recvDate||"")}" aria-label="접수일"></td>
 ${late ? `<td class="kc">${kindCell}<div class="acts">${acts}</div></td>` : ""}
 <td class="atc">${it.wd ? "" : `<button type="button" class="minibtn addatt" data-act="addatt" title="이 안건의 붙임 파일을 고릅니다">+ 붙임</button>`}${it.att.map((a,k)=>`<span class="att"><i class="bd ${a.ext==="pdf"?"pdf":a.ext==="hwpx"?"hwpx":"txt"}">${esc(a.ext.toUpperCase())}</i>${esc(a.fileName)}${hasData(a.fileName)?"":" (다시 올리기)"}<button type="button" class="x" data-act="rmatt" data-k="${k}" aria-label="붙임 빼기">×</button></span>`).join("")}</td>
-<td class="ckc">${warn.length ? warn.map(w=>`<span class="badge b-warn">${w}</span>`).join(" ") : `<span class="badge b-ok">확인</span>`}${(it.fee||it.kind==="규정개정")?` <span class="webnote" title="홈페이지 게시용 안건에 들어갑니다">${webIcon("law")}</span>`:""}${ops.length ? ` <span class="badge b-op" title="학부모 의견수렴 대상: ${esc(ops.join(", "))}">의견수렴</span>` : ""}${opNeed && opDays < 1 ? ` <button type="button" class="badge b-warn bbtn" data-act="op" title="긴급이어도 학부모 의견수렴은 생략할 수 없습니다. 눌러서 기간을 적으세요">의견수렴 기간 확인</button>` : opNeed ? ` <span class="badge b-ok" title="의견수렴 ${esc(it.op.from)} ~ ${esc(it.op.to)}">수렴 ${opDays}일</span>` : ""}${!late && !it.plan && !it.wd && cut && parseYmd(it.recvDate) > cut && typeNow()!=="긴급임시회" ? ` <span class="badge b-warn" title="접수 마감(${fMD(cut)}) 뒤에 들어온 안건입니다. 긴급 사유가 있으면 [긴급 예정]으로 표시하고, 아니면 다음 회의로 넘기세요">마감 뒤 접수</span>` : ""}</td>
+<td class="ckc">${warn.length ? warn.map(w=>`<span class="badge b-warn">${w}</span>`).join(" ") : `<span class="badge b-ok">이상 없음</span>`}${(it.fee||it.kind==="규정개정")?` <span class="webnote" title="홈페이지 게시용 안건에 들어갑니다">${webIcon("law")}</span>`:""}${ops.length ? ` <span class="badge b-op" title="학부모 의견수렴 대상: ${esc(ops.join(", "))}">의견수렴</span>` : ""}${opNeed && opDays < 1 ? ` <button type="button" class="badge b-warn bbtn" data-act="op" title="긴급이어도 학부모 의견수렴은 생략할 수 없습니다. 눌러서 기간을 적으세요">학부모 의견 듣는 기간을 넣으세요</button>` : opNeed ? ` <span class="badge b-ok" title="의견수렴 ${esc(it.op.from)} ~ ${esc(it.op.to)}">수렴 ${opDays}일</span>` : ""}${!late && !it.plan && !it.wd && cut && parseYmd(it.recvDate) > cut && typeNow()!=="긴급임시회" ? ` <span class="badge b-warn" title="접수 마감(${fMD(cut)}) 뒤에 들어온 안건입니다. 긴급 사유가 있으면 [긴급 예정]으로 표시하고, 아니면 다음 회의로 넘기세요">마감(${fMD(cut)}) 뒤에 들어옴</span>` : ""}</td>
 ${late ? `<td class="delc">${delBtn}</td>` : `<td class="nw">${acts}</td>`}</tr>${wdRow}${planRow}`;
   };
   const fin = rec.final;
   const noFile = firstRows.filter(x => !x.it.wd && !S.files[x.it.fileName]).length;
-  const flow = late ? "" : `<div class="flow">
-<div class="fl ${firstRows.length?"done":""}"><div class="k">① 안건 파일 올리기</div><div class="t">안건 ${firstRows.length}건 · 붙임 ${firstRows.reduce((a,x)=>a+x.it.att.length,0)}개</div><span class="who">간사</span></div>
-<div class="fl cur"><div class="k">② 유형 확인·순서·최종 접수</div><div class="t">${firstRows.length?`${itemNo(rec,firstRows[0].i)} ~ ${itemNo(rec,firstRows[firstRows.length-1].i)}`:"-"}</div><span class="small">안건집 zip 내려받기</span></div>
-<div class="fl ${S.mt&&S.mt.gen["gongmun:intake"]?"done":""}"><div class="k">③ 학교 기안 (.odt)</div><div class="t">심의 안건 제출 및 회의 개최 요청</div><span class="who">학교장 → 위원장</span></div>
-<div class="fl ${rec.doc&&rec.doc.no?"done":""}"><div class="k">④ 기안번호 입력</div><div class="t">${rec.doc&&rec.doc.no?esc(intakeRef(rec)):"업무관리시스템 기안번호"}</div><span class="small">개최·일정 변경·결과 이송 공문의 '관련'</span></div></div>`;
-  box.innerHTML = pick + intakeGuide(false) + `${flow}
+  box.innerHTML = (S.cur ? "" : pick) + `
 <div class="card">
   <div class="row-btns" style="margin:0 0 10px"><b>제${rec.gi}기 제${rec.hoe}회</b><button type="button" class="minibtn agform" style="margin-left:auto;order:9" title="교직원에게 나눠 줄 빈 심의 안건 양식">심의 안건 작성 양식 (.hwpx)</button><span class="hint" style="margin:0">${rec.year}학년도${rec.cum?` · 누년 ${esc(rec.cum)}회`:""}${md?` · 회의 ${fMD(md)} · 접수 마감(10일 전) ${fMD(cut)}`:" · 회의일 미정(개최 준비에서 입력)"}${fin ? ` · ${rec.fromLedger ? "안건대장 회의" : `최종 접수 ${esc(fin.at)}`}` : ""}</span></div>
   <label class="drop" id="ikDrop" tabindex="0"><input type="file" id="ikFile" accept=".hwpx,.hwp,.pdf,.xlsx,.xls,.jpg,.jpeg,.png" multiple hidden>
-    <strong>${late?"새로 들어온 안건 파일과 붙임을 끌어다 놓기 (추가·긴급 제출)":"안건 파일(.hwpx)과 붙임(.pdf, .hwpx)을 한꺼번에 끌어다 놓기"}</strong>
+    <strong>${late?"늦게 온 안건 파일을 여기에 끌어다 놓으세요 (추가·긴급 제출)":"안건 파일을 여기에 끌어다 놓으세요"} <span style="font-weight:400;font-size:13px">(붙임도 같이 넣으면 알아서 짝지어요)</span></strong>
     <small>${late?"접수일로 추가·긴급 제출을 판단합니다(고친 파일은 그 줄의 [수정 제출]) · ":""}.hwp도 됩니다(처음 한 번 인터넷 필요) · 붙임은 이름 앞부분이 같으면 자동 짝</small></label>
-  <div class="iktyped" id="ikTyped"><b>파일 없이 입력${late?" <span class=\"small\">(추가·긴급 제출)</span>":""}</b><input class="inp" id="ikTTitle" placeholder="안건명 (여러 줄은 엑셀·한글 표에서 복사해 붙여 넣기)" aria-label="안건명"><input class="inp s" id="ikTPos" placeholder="직위" aria-label="직위" list="ikPosList"><input class="inp s" id="ikTName" placeholder="성명" aria-label="성명"><button type="button" class="btn sm" id="ikTAdd">+ 추가</button></div>
+  <div class="iktyped" id="ikTyped"><b>파일이 아직 없으면 안건명만 먼저${late?" <span class=\"small\">(추가·긴급 제출)</span>":""}</b><input class="inp" id="ikTTitle" placeholder="안건명 (여러 줄은 엑셀·한글 표에서 복사해 붙여 넣기)" aria-label="안건명"><input class="inp s" id="ikTPos" placeholder="직위" aria-label="직위" list="ikPosList"><input class="inp s" id="ikTName" placeholder="성명" aria-label="성명"><button type="button" class="btn sm" id="ikTAdd">+ 추가</button></div>
   <datalist id="ikPosList">${POS_LIST.map(p=>`<option value="${p}">`).join("")}</datalist>
   <input type="file" id="ikModFile" accept=".hwpx,.hwp,.pdf" multiple hidden>
   <input type="file" id="ikSetFile" accept=".hwpx,.hwp" hidden>
@@ -3210,18 +3330,40 @@ ${late ? lateIntro(rec, cut) : ""}
   ${IK.loose.length ? `<div class="cond soft"><b>짝을 못 찾은 붙임</b> — 어느 안건의 붙임인지 고르세요.<br>${IK.loose.map((a,k)=>`<span class="att">${esc(a.fileName)}</span> <select class="inp" data-loose="${k}"><option value="">안건 고르기</option>${a.ext==="hwpx"?`<option value="__agenda">↳ 붙임 아님: 안건으로 올리기</option>`:""}${rows.filter(x=>!x.it.wd).map(({it,i})=>`<option value="${it.id}">${itemNo(rec,i)} ${esc(it.title.slice(0,24))}</option>`).join("")}</select> <button type="button" class="x" data-loosedel="${k}" title="잘못 올린 파일이면 빼기" aria-label="이 파일 빼기">×</button>`).join("<br>")}</div>` : ""}
   <p class="hint" data-short="유형·부담경비는 안건명으로 짐작합니다. 틀리면 고치세요.">안건 유형은 안건명으로 짐작합니다(규정·학칙 + 개정·제정 → 규정개정, '보고'로 끝남 → 보고). 부담경비는 '체험학습, 수학여행, 수련활동, 졸업앨범, 방과후' 같은 낱말로 짐작합니다. 직위는 담당자 칸에서 읽고(교육행정실장 → 행정실장), 없으면 '교사'로 채웁니다. 고치면 이 컴퓨터가 이름별로 기억합니다. 행정실장·교감처럼 한 명뿐인 직위는 성명이 없어도 됩니다. ${webIcon("law")} 표시(부담경비·규정개정)는 홈페이지 게시용 안건에 들어갑니다. <span class="badge b-op">의견수렴</span>은 미리 학부모 의견을 들어야 하는 안건(학칙 제·개정, 학부모 경비 부담, 방과후·방학 중 교육·수련활동, 학교운영지원비, 학교급식)입니다.</p>
 </div>
+${planCard(rec)}
 ${late ? lateActions(rec) : ""}
 ${!late || !rec.fromLedger ? `<div class="card">
-  <h3>최종 안건 접수</h3>
-  <div class="row-btns"><button type="button" class="btn ${fin?"ghost sm":"hl"}" id="ikFinal">${fin?"처음 안건집 다시 만들기":"최종 안건 접수 · 안건집 묶음 받기 (.zip)"}</button><button type="button" class="btn ghost sm" id="ikPv">안건집 미리보기</button>${fin && !rec.fromLedger ? `<button type="button" class="btn ghost sm" id="ikUnfinal" title="최종 접수 전으로 돌아가 순서를 바꾸거나 안건을 다시 넣습니다">최종 접수 되돌리기</button>` : ""}
+  <h3>접수 마치기</h3>
+  <div class="row-btns"><button type="button" class="btn ${fin?"ghost sm":"hl"}" id="ikFinal">${fin?"처음 안건집 다시 만들기":"접수 마치고 안건집 받기 (.zip)"}</button><button type="button" class="btn ghost sm" id="ikPv">안건집 미리보기</button>${fin && !rec.fromLedger ? `<button type="button" class="btn ghost sm" id="ikUnfinal" title="최종 접수 전으로 돌아가 순서를 바꾸거나 안건을 다시 넣습니다">접수 마친 것 취소하기</button>` : ""}
   <span class="small">${noFile ? `<b>파일 없는 ${noFile}건은 표지·목록에만 들어갑니다</b> · ` : ""}zip 안: 안건집(표지·목록 + 안건, 한글 붙임은 해당 안건 뒤) · 홈페이지 게시용 안건(부담경비·규정개정이 있을 때) · 이름을 바꾼 PDF 붙임</span></div>
   ${fin ? `<p class="cond soft">최종 접수됨: ${esc(fin.at)} (${esc(fin.from)} ~ ${esc(fin.to)}). 이 뒤에 올리는 파일은 추가·긴급 제출로 받습니다.</p>` : ""}
   ${(IK.lastWarn||[]).length && !late ? `<p class="cond">${IK.lastWarn.map(esc).join("<br>")}</p>` : ""}
   <p class="hint" data-short="파일마다 새 쪽에서 시작하고, 쪽번호는 새로 매깁니다.">용지·여백은 올린 파일의 한글 설정 그대로 두고, 파일마다 새 쪽에서 시작합니다(끝의 빈 줄은 지워 빈 쪽이 생기지 않게). 원래 쪽번호는 모두 지우고 첫 안건부터 아래 가운데 "- 1 -"로 새로 넣습니다. 표지·목록에는 쪽번호를 넣지 않습니다.</p>
   ${md && fin && !rec.fromLedger && dayDiff(parseYmd(fin.at), md) < INTAKE_DAYS && typeNow()!=="긴급임시회" ? `<p class="cond">최종 접수일(${esc(fin.at)})이 접수 마감(회의 10일 전, ${fMD(cut)})보다 늦습니다. 회의 8일 전(${fMD(noticeDue(md))})까지 공고·안건 배부를 마칠 수 있는지 확인하고, 어려우면 회의일을 늦추거나 긴급 임시회로 하세요.</p>` : ""}
 </div>` : ledgerBookCard(rec)}
-<div id="ikPreview"></div>`;
+<div id="ikPreview"></div>${intakeGuide(false)}`;
   wireIntake(rec, late);
+}
+/* 긴급 예정 안건의 자료집(v2.6.2): 처음 접수 안건 그대로, 자료가 들어온 긴급 예정 안건만 따로 묶어 위원에게 보낸다 */
+const planDueText = due => { const d = parseYmd(due); return d ? `${d.getMonth()+1}. ${d.getDate()}.` : "추후"; };
+function planCard(rec){
+  const P = rec.items.map((it, i) => ({it, i})).filter(x => x.it.plan && !x.it.wd);
+  if(!P.length || !rec.final) return "";
+  const got = P.filter(x => x.it.fileName && S.files[x.it.fileName]);
+  return `<div class="card"><h3>긴급 안건 자료 <span class="small">처음 공고에 '긴급(자료 추후 배부)'로 들어간 안건</span></h3>
+<ul class="small" style="margin:0 0 8px;padding-left:18px">${P.map(({it, i}) => `<li><b>${esc(itemNo(rec, i))}</b> ${esc(it.title)} — ${it.fileName ? `자료 받음 ${esc(fMD(parseYmd(it.plan.got))||"")}${S.files[it.fileName] ? "" : " (파일을 다시 넣어 주세요)"}` : `자료 ${esc(fMD(parseYmd(it.plan.due))||"")} 도착 예정 · 오면 그 줄의 [+ 파일 등록]`}</li>`).join("")}</ul>
+<div class="row-btns"><button type="button" class="btn ${got.length?"hl":"ghost"}" id="planBook" ${got.length?"":"disabled"}>긴급 안건 자료집 받기 (.hwpx)</button><button type="button" class="btn ghost sm" id="planMsg">위원에게 보낼 메시지</button>
+<span class="small">추가 제출 기안과 수정 공고는 필요 없습니다(제목이 처음 기안·공고에 이미 들어감). 자료집은 쪽 번호 1부터, 첫 장에 양해 안내가 들어갑니다.</span></div></div>`;
+}
+async function planBook(rec){
+  const E = rec.items.map((it, i) => ({it, i})).filter(x => x.it.plan && !x.it.wd && x.it.fileName && S.files[x.it.fileName]).map(x => ({it:x.it, no:itemNo(rec, x.i)}));
+  if(!E.length){ toast("자료(파일)가 들어온 긴급 예정 안건이 없습니다"); return; }
+  try{
+    const book = await buildAgendaBook(rec, E, {cover:true, head:"긴급 안건 자료", letter:"plan"});
+    download(book.blob, `긴급안건자료_제${rec.gi}기_제${rec.hoe}회_${E.map(e=>e.no).join(",")}.hwpx`);
+    if(S.mt){ S.mt.gen["planBook:intake"] = true; saveMeetState(); }
+    toast(`긴급 안건 자료집을 내려받았습니다${book.warns.length ? ` · 확인: ${book.warns.join(" / ")}` : ""}. 위원에게 보내세요`);
+  }catch(e){ console.error(e); toast("자료집을 만들지 못했습니다: " + e.message); }
 }
 /* ----- 긴급 예정(v2.6.0): 위원장과 미리 긴급 안건으로 협의한 안건 + 의견수렴 기간 ----- */
 function planRowHtml(it, ops, opNeed, opDays){
@@ -3317,7 +3459,8 @@ function wireIntake(rec, late){
     let more = "";
     if(it.plan && first){   // 긴급 예정 안건의 자료가 들어옴: 받은 날 = 대장 접수일. 최종 접수 뒤면 긴급 안건만 따로 묶는다
       it.plan.got = ymd(new Date()); it.recvDate = it.plan.got;
-      if(rec.final && !it.st){ it.st = "urgent"; it.stSet = true; it.batch = rec.batchNo || 1; if(!rec.lateReason) rec.lateReason = it.plan.reason || ""; more = " 아래 '추가 안건 접수'에서 긴급 안건집을 받고, 위원 메시지 '긴급 안건 추가 안내'를 보내세요"; }
+      // 처음 기안·공고에 이미 '긴급(자료 추후 배부)'로 들어간 안건이라 추가 제출·수정 공고는 하지 않는다(v2.6.2, 사용자 결정)
+      if(rec.final) more = " 아래 '긴급 안건 자료' 카드에서 자료집을 받고 위원에게 보내세요";
     }
     putIntake(rec); renderIntake(S.view); toast(`${itemNo(rec, rec.items.indexOf(it))}에 안건 파일을 넣었습니다.${more}`);
   });
@@ -3331,10 +3474,12 @@ function wireIntake(rec, late){
   const wo = $("wdOk"); if(wo) wo.onclick = () => {
     const it = rec.items.find(x => x.id===IK.wdOpen); if(!it) return;
     it.wd = {reason:$("wdReason").value.trim(), date:$("wdDate").value, batch:wdBatchFor(rec)}; IK.wdOpen = null;
-    putIntake(rec); selectMeetingKeepView(rec.key); renderIntake(S.view); toast("철회로 표시했습니다. 왼쪽 '안건 추가·수정·철회 기안'에서 철회서와 기안문을 받으세요");
+    putIntake(rec); selectMeetingKeepView(rec.key); renderIntake(S.view); toast("철회로 표시했습니다. 왼쪽 '늦게 온·고친·거둔 안건 기안'에서 철회서와 기안문을 받으세요");
   };
   const wn = $("wdNo"); if(wn) wn.onclick = () => { IK.wdOpen = null; renderIntake(S.view); };
   wirePlanRow(rec);
+  const pbk = $("planBook"); if(pbk) pbk.onclick = () => planBook(rec);
+  const pms = $("planMsg"); if(pms) pms.onclick = () => go("prep:msg");
   const tt = $("ikTTitle"), tp = $("ikTPos"), tn = $("ikTName");
   const typedAdd = () => {
     const pos = tp.value.trim(), nm = tn.value.trim();
@@ -3450,9 +3595,9 @@ function unfinalIntake(rec){
   selectMeetingKeepView(rec.key); renderIntake(S.view); toast("최종 접수를 되돌렸습니다");
 }
 /* 단추 여러 개 중 하나를 고르는 작은 창 → 고른 값(취소·Esc는 "") */
-function choose(title, html, opts){
+function choose(title, html, opts, cls){
   return new Promise(res => {
-    const dl = document.createElement("dialog"); dl.className = "choose";
+    const dl = document.createElement("dialog"); dl.className = "choose" + (cls ? " " + cls : "");
     dl.innerHTML = `<div class="vd"><h2>${title}</h2>${html}<div class="chs">${opts.map((o,k)=>`<button type="button" class="${o.v ? `btn ${o.hl?"hl":"ghost"}` : "minibtn"}" data-k="${k}">${esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}</button>`).join("")}</div></div>`;
     document.body.appendChild(dl);
     const done = v => { dl.close(); dl.remove(); res(v); };
@@ -3593,7 +3738,7 @@ function lateActions(rec){
 <label class="f"><span>제출 사유 (학교 기안 '제출 사유'에 들어갑니다${urgent?" — 긴급 제출이 있어 꼭 적으세요":""})</span><input class="inp" id="lateReason" value="${esc(rec.lateReason||"")}" placeholder="예: 학교폭력전담기구 학부모위원 구성 기한 도래"></label>
 <div class="row-btns"><button type="button" class="btn hl" id="ikLateGo" ${L.length?"":"disabled"}>추가 안건 접수 · 추가 안건집 받기 (.zip)</button><button type="button" class="btn ghost sm" id="ikLatePv" ${L.length?"":"disabled"}>추가 안건집 미리보기</button>
 <span class="small">기존 안건집은 그대로 두고, 이번에 들어온 안건만 따로 묶습니다(쪽번호 1부터). 긴급 제출이 있으면 첫 장에 양해 안내가 들어갑니다.</span></div>
-${!open && L.length ? `<p class="cond soft">추가 안건집을 만들었습니다(${esc(L[0].it.done||"")}). 다음 순서: 왼쪽 '안건 추가·수정·철회 기안' → 개최 준비의 '개최 수정 (추가·철회·일정)'.</p>` : ""}
+${!open && L.length ? `<p class="cond soft">추가 안건집을 만들었습니다(${esc(L[0].it.done||"")}). 다음 순서: 왼쪽 '늦게 온·고친·거둔 안건 기안' → 개최 준비의 '바뀐 내용 다시 알리기'.</p>` : ""}
 ${(IK.lastWarn||[]).length ? `<p class="cond">${IK.lastWarn.map(esc).join("<br>")}</p>` : ""}
 </div>`;
 }
@@ -4115,18 +4260,18 @@ function todoCard(nx){
   const C = {
     "base:school": {t:"학교 정보 넣기", p:"학교명·간사·위원장 이름을 한 번만 넣으면 모든 공문에 들어갑니다. 1분이면 됩니다.", b:"학교 정보 넣기", alt:`기존 공문(.odt)이 있으면 <button type="button" class="lnk" data-todo="odt">올려서 자동으로 채우기</button>`},
     "base:meetings": S.meetings.length
-      ? {t:"회의 고르기", p:"맨 위 회의 목록에서 이번 회의를 고르거나 새 회의를 만드세요.", b:"회의 차수 화면으로"}
+      ? {t:"회의 고르기", p:"맨 위 회의 목록에서 이번 회의를 고르거나 새 회의를 만드세요.", b:"회의 목록으로"}
       : {t:"회의 만들기", p:"기수·회차와 회의 예정일을 넣어 이번 회의를 만듭니다. 만들면 바로 안건 접수로 넘어갑니다.", b:"회의 만들기", alt:`쓰던 안건대장 엑셀이 있으면 <button type="button" class="lnk" data-todo="base:ledger">불러오기</button>`},
     "intake:main": rec && rec.items.length
-      ? {t:"안건 접수 마무리하기", p:`안건 ${rec.items.length}건이 들어와 있습니다. 순서를 확인하고 <b>최종 접수</b>를 누르면 안건번호가 매겨지고 안건집이 만들어집니다.${md?` 접수 마감(10일 전)은 <b>${fMD(intakeDue(md))}</b>입니다.`:""}`, b:"안건 접수 화면으로"}
-      : {t:"안건 받기", p:"교직원에게 심의 안건 작성 양식을 나눠 주고, 들어온 안건 파일을 올리세요.", b:"안건 접수 화면으로", alt:`<button type="button" class="lnk" data-todo="intake:msg">교직원 메시지</button> 보내기`},
+      ? {t:"안건 접수 마무리하기", p:`안건 ${rec.items.length}건이 들어와 있습니다. 순서를 확인하고 <b>최종 접수</b>를 누르면 안건번호가 매겨지고 안건집이 만들어집니다.${md?` 접수 마감(10일 전)은 <b>${fMD(intakeDue(md))}</b>입니다.`:""}`, b:"안건 받기로"}
+      : {t:"안건 받기", p:"교직원에게 심의 안건 작성 양식을 나눠 주고, 들어온 안건 파일을 올리세요.", b:"안건 받기로", alt:`<button type="button" class="lnk" data-todo="intake:msg">교직원 메시지</button> 보내기`},
     "intake:doc": {t:"학교 기안: 심의 안건 제출", p:"학교장 명의 '심의 안건 제출 및 회의 개최 요청' 기안문을 받아 업무관리시스템에서 기안하고, 기안번호를 넣으세요.", b:"기안문 화면으로"},
-    "prep:open": {t:"회의 개최 문서 만들기", p:`개최 공문·공고문·안내장 등을 만듭니다. ${stat("prep")} 공고·안건 배부는 회의 8일 전까지 합니다(7일 전까지 도착).`, b:"회의 개최 화면으로", alt:`위원에게 <button type="button" class="lnk" data-todo="prep:msg">안내 메시지</button>`},
-    "meet:main": {t:"회의 준비물 만들기", p:`출석을 넣고 시나리오·출석 등록부·명패를 받으세요. ${stat("meet")}`, b:"회의 진행 준비물로", alt:`회의 날 <button type="button" class="lnk" data-todo="meet:msg">당일 안내 메시지</button>`},
-    "result:main": {t:"회의 결과 정리", p:"회의록을 만들 개요·프롬프트와 안건처리 결과 이송 기안을 만듭니다.", b:"회의 결과 화면으로"},
-    "result:promo": {t:"결과 홍보 기안", p:"위원장의 결과 이송을 받은 뒤 학교가 올리는 '심의결과 홍보' 기안입니다.", b:"결과 홍보 화면으로"}
+    "prep:open": {t:"회의 개최 문서 만들기", p:`개최 공문·공고문·안내장 등을 만듭니다. ${stat("prep")} 공고·안건 배부는 회의 8일 전까지 합니다(7일 전까지 도착).`, b:"회의 알리기로", alt:`위원에게 <button type="button" class="lnk" data-todo="prep:msg">안내 메시지</button>`},
+    "meet:main": {t:"회의 준비물 만들기", p:`출석을 넣고 시나리오·출석 등록부·명패를 받으세요. ${stat("meet")}`, b:"회의 날 쓸 것 만들기로", alt:`회의 날 <button type="button" class="lnk" data-todo="meet:msg">당일 안내 메시지</button>`},
+    "result:main": {t:"회의 결과 정리", p:"회의록을 만들 개요·프롬프트와 안건처리 결과 이송 기안을 만듭니다.", b:"회의록 쓰고 결과 보내기로"},
+    "result:promo": {t:"결과 홍보 기안", p:"위원장의 결과 이송을 받은 뒤 학교가 올리는 '심의결과 홍보' 기안입니다.", b:"결과 알리기로"}
   };
-  const c = nx ? C[nx] : {t:"이번 회의 업무를 모두 마쳤습니다", p:"수고하셨습니다. 다음 회의는 회의 차수에서 새로 만드세요.", b:"다음 회의 만들기"};
+  const c = nx ? C[nx] : {t:"이번 회의 업무를 모두 마쳤습니다", p:"수고하셨습니다. 다음 회의는 회의 목록에서 새로 만드세요.", b:"다음 회의 만들기"};
   const trail = [["학교 정보", ["base:school"]], ["회의 만들기", ["base:meetings"]], ["안건 접수", ["intake:main","intake:doc"]], ["개최 준비", ["prep:open"]], ["회의·결과", ["meet:main","result:main","result:promo"]]];
   let cur = trail.findIndex(([, vs]) => !vs.every(viewDone)); if(cur < 0) cur = trail.length;
   // 긴급 예정 안건: 자료 제출 예정일이 지났는데 파일이 없으면 알림(v2.6.0)
@@ -4190,6 +4335,7 @@ function playIntro(){
 }
 
 /* ----- 화면 머리: 한 줄 설명 + [? 도움말] ----- */
+const MSG_LINK = {"intake:main":["intake:msg","교직원에게 안건 내 달라고 보내기"], "intake:doc":["intake:msg","교직원 메시지"], "prep:open":["prep:msg","위원에게 메시지 보내기"], "prep:change":["prep:msg","위원에게 메시지 보내기"], "meet:main":["meet:msg","오늘 회의 안내 보내기"]};
 function viewHead(view){
   const W = VIEWS[view] || {};
   const short = VIEW_SHORT[view] || (W.hint||"").split(/(?<=[다요])\.\s/)[0] || "";
@@ -4197,6 +4343,11 @@ function viewHead(view){
   $("modeHint").hidden = view==="start";
   const hb = $("helpBox"); hb.hidden = true; hb.innerHTML = "";
   if(view==="start") return;
+  /* v2.7.0: 메시지는 왼쪽 메뉴 대신 화면 머리 단추로 */
+  const ML = MSG_LINK[view], P = W.parent && VIEWS[W.parent];
+  if(ML) $("vTitle").insertAdjacentHTML("beforeend", `<button type="button" class="msgln" data-msgln="${ML[0]}">✉ ${esc(ML[1])}</button>`);
+  if(W.panel==="msg" && P) $("vTitle").insertAdjacentHTML("beforeend", `<button type="button" class="msgln" data-msgln="${W.parent}">← ${esc(P.label)}(으)로</button>`);
+  document.querySelectorAll("#vTitle [data-msgln]").forEach(b => b.onclick = () => go(b.dataset.msgln));
   const has = (W.hint && W.hint !== short) || COACH[view];
   if(!has) return;
   $("vTitle").insertAdjacentHTML("beforeend", `<button type="button" class="helpq" id="helpQ" aria-expanded="false" title="이 화면 설명과 따라 하기"><b>?</b>도움말</button>`);
@@ -4301,7 +4452,7 @@ function gongmun(d){
     items = [...r0, P(n0?"p2":"p1",`${1+n0}. ${d.committee} 규정 ${d.article}에 의거하여 제${d.n}회 ${k==="정기회"?"정기회의":"임시회의"}를 아래와 같이 소집하고자 하며,`),
       P("p2",`${2+n0}. 소집 공고문을 학교홈페이지에 게시하고 방청 안내장을 학부모에게 발송하여 학교운영위원회 활동에 관심 있는 학부모와 교직원 또는 지역사회인사들이 많이 방청하고자 합니다.`),
       SUB(`가. 일 시 : ${dt(d.md,d.time)}`), SUB(`나. 장 소 : ${d.place}`), SUB(`다. 안 건`),
-      {t:"table", rows:d.agendas.map(a=>[a.name])}, {t:"attach", list:d.attachments}];
+      {t:"table", rows:d.agendas.map(a=>[a.planI ? `${a.name} (긴급, 자료 추후 배부)` : a.name])}, {t:"attach", list:d.attachments}];
   } else if(d.mode==="open"){
     kit = "urgent"; tag = "긴급_회의_개최_공문";
     title = `제${d.n}회 ${d.committee}(임시회) 긴급 회의 개최`;
@@ -4354,7 +4505,7 @@ function schoolGongmun(d){
   if(d.mode==="intake") return {...base, tag:"심의안건_제출_회의개최_요청", title:`${head} 심의 안건 제출 및 회의 개최 요청`,
     items:[P("p1",`1. 관련: ${d.committee} 규정 ${d.article}`), P("p2",`2. 학교 운영에 관한 다음 사항을 학교운영위원회 심의 안건으로 제출하오니 회의를 개최하여 주시기 바랍니다.`),
       SUB(`가. 회의 요청 일시: ${dt(d.md,d.time) || "추후 협의"}`), SUB(`나. 회의 종류: ${d.type==="긴급임시회"?"임시회(긴급)":k}`), SUB(`다. 제출 안건`),
-      {t:"table", head:["안건번호","안 건 명","제안자","비고"], rows:d.agendas.map(a=>[a.no,a.name,a.proposer,""])}, BLANK, {t:"attach", list:d.attachments}]};
+      {t:"table", head:["안건번호","안 건 명","제안자","비고"], rows:d.agendas.map(a=>[a.no,a.name,a.proposer,a.planI ? `긴급(자료 ${planDueText(a.planDue)} 제출 예정)` : ""])}, BLANK, {t:"attach", list:d.attachments}]};
   if(d.mode==="late"){
     /* 추가·수정·철회를 기안 하나로 (사용자 결정) */
     const L = d.lateList, W = d.wdNow || [], kinds = [...new Set(L.map(a=>a.subLabel))];
@@ -4542,8 +4693,9 @@ function buildNotice(d){
   const rows = [];
   rows.push(["일　　시", `${d.md?fKorW(d.md):""} ${tHM(d.time)} ~`]);
   rows.push(["장　　소", d.place]);
-  const agendaLines = d.agendas.map(a=>`- ${a.name}${d.mode==="change" && a.added ? (d.urgentAdd ? " (긴급 추가)" : " (추가)") : ""}`);
-  if(d.agendas.length===1) rows.push(["안　　건", d.agendas[0].name]);
+  const planTag = a => a.planI ? " (긴급, 자료 추후 배부)" : "";   // 긴급 예정 안건(v2.6.2)
+  const agendaLines = d.agendas.map(a=>`- ${a.name}${planTag(a)}${d.mode==="change" && a.added ? (d.urgentAdd ? " (긴급 추가)" : " (추가)") : ""}`);
+  if(d.agendas.length===1) rows.push(["안　　건", d.agendas[0].name + planTag(d.agendas[0])]);
   else rows.push(["안　　건", `총 ${d.agendas.length}건`, agendaLines]);
   if(d.mode==="change"){
     const ch = [];
@@ -5323,7 +5475,7 @@ function buildHowto(d){
   if(d.mode==="progress") return `<div class="howto">
 <h3>회의 전 준비</h3>
 <ol>
-<li><b>기본 입력 → 위원 명단</b>을 확인합니다. 기수가 바뀌면 위원을 고치세요. 한 번 고치면 같은 기수에서는 계속 쓰이고, '회의 결과'에서도 같은 명단을 씁니다.</li>
+<li><b>처음 한 번 넣을 것 → 위원 명단</b>을 확인합니다. 기수가 바뀌면 위원을 고치세요. 한 번 고치면 같은 기수에서는 계속 쓰이고, '회의 결과'에서도 같은 명단을 씁니다.</li>
 <li>안건마다 <b>안건유형</b>(규정개정·일반심의·보고)을 확인하고 ▲▼로 <b>의사일정 순서</b>를 맞춥니다. 처음에는 규정개정, 일반심의, 보고 순으로 정렬해 둡니다.</li>
 <li><b>위원장 시나리오</b>를 내려받아 위원장께 드립니다. 의사일정 순서, 안건유형, 긴급 안건 여부에 맞춰 상정·선포 문구가 만들어집니다.</li>
 <li><b>위원 출석 등록부</b>를 내려받아 인쇄하고 회의 때 서명을 받습니다.</li>
@@ -5337,7 +5489,7 @@ function buildHowto(d){
   return `<div class="howto">
 <h3>1. 회의록 만들기</h3>
 <ol>
-<li>이 화면 왼쪽(또는 회의 단계 → 회의 진행 준비물)의 <b>출석 (이 회의)</b>에서 실제 <b>출석 여부(○/×)</b>를 맞추고 '출석 반영'을 누릅니다. 재적·출석 수가 회의 개요에 들어가고, 회의록의 개의 선언과 가결 선포 인원수가 이 숫자로 만들어집니다.</li>
+<li>이 화면 왼쪽(또는 회의 단계 → 회의 날 쓸 것 만들기)의 <b>출석 (이 회의)</b>에서 실제 <b>출석 여부(○/×)</b>를 맞추고 '출석 반영'을 누릅니다. 재적·출석 수가 회의 개요에 들어가고, 회의록의 개의 선언과 가결 선포 인원수가 이 숫자로 만들어집니다.</li>
 <li><b>회의 개요</b>를 내려받습니다. AI 서비스가 HTML 첨부를 받지 않으면 파일을 열어 인쇄에서 'PDF로 저장'을 고르세요.</li>
 <li>클로바노트에서 녹음을 <b>텍스트(.txt)로 내보냅니다</b>.</li>
 <li>AI(Claude 등) 새 대화에 <b>회의록 프롬프트</b>를 붙여 넣고, 파일 3개를 첨부합니다.
@@ -5676,9 +5828,9 @@ function startDoors(){
 /* ---------- 점검 ---------- */
 function checks(d){
   const out = [];
-  if(!d.school) out.push(["warn","학교명","기본 입력 → 학교·결재 정보에 학교명을 입력하세요."]);
-  if(d.mode!=="progress" && !d.article) out.push(["warn","근거 조항","기본 입력 → 학교·결재 정보의 '회의 소집 근거 조항'(예: 제14조)을 입력하세요. 학교운영위원회 규정에서 회의 소집 조항을 확인하세요."]);
-  if(!d.st.staff || !d.st.approver) out.push(["warn","입력 필요","담당자명과 결재자명을 기본 입력 → 학교·결재 정보에 입력하세요."]);
+  if(!d.school) out.push(["warn","학교명","처음 한 번 넣을 것 → 우리 학교 정보에 학교명을 입력하세요."]);
+  if(d.mode!=="progress" && !d.article) out.push(["warn","근거 조항","처음 한 번 넣을 것 → 우리 학교 정보의 '회의 소집 근거 조항'(예: 제14조)을 입력하세요. 학교운영위원회 규정에서 회의 소집 조항을 확인하세요."]);
+  if(!d.st.staff || !d.st.approver) out.push(["warn","입력 필요","담당자명과 결재자명을 처음 한 번 넣을 것 → 우리 학교 정보에 입력하세요."]);
   if(d.mode==="open"){
     if(!d.agendas.length) out.push(["warn","안건 없음","문서에 넣을 안건을 하나 이상 체크하세요."]);
     if(d.md && d.nd){
@@ -5728,7 +5880,7 @@ function checks(d){
     else {
       if(!d.rec.final) out.push(["info","최종 접수","'안건 올리기·최종 접수'에서 최종 접수를 하면 안건 목록이 확정됩니다."]);
       if(!d.sch.docNo) out.push(["info","학교 기안번호","업무관리시스템에서 기안한 뒤 기안번호와 생산일자를 넣으세요. 대장 줄의 '안건접수기안' 칸에 들어갑니다."]);
-      if(!$("s_schoolPrefix").value.trim()) out.push(["info","학교 문서번호 앞부분","기본 입력 → 학교·결재 정보에 '학교 문서번호 앞부분'(예: 한빛초-)을 넣으면 기안번호만 적어도 됩니다."]);
+      if(!$("s_schoolPrefix").value.trim()) out.push(["info","학교 문서번호 앞부분","처음 한 번 넣을 것 → 우리 학교 정보에 '학교 문서번호 앞부분'(예: 한빛초-)을 넣으면 기안번호만 적어도 됩니다."]);
       const cut = intakeDue(d.md), late = cut ? d.rec.items.filter(it=>!it.st && !it.wd && parseYmd(it.recvDate) > cut) : [];
       if(late.length && d.type!=="긴급임시회") out.push(["warn","10일 전 접수",`접수 마감(회의 10일 전, ${fDot(cut)}) 뒤에 접수한 안건이 ${late.length}건 있습니다. 8일 전까지 공고·배부할 수 없으면 회의일을 늦추거나 긴급 임시회로 하세요.`]);
     }
@@ -5779,8 +5931,8 @@ function checks(d){
     else out.push(["warn","개의 정족수",`재적 ${total}명 중 ${d.present}명 출석으로 과반수(${need}명)에 못 미칩니다. 출석 여부를 확인하세요.`]);
     if(!d.members.some(x=>x.chair)) out.push(["warn","위원장","위원 명단에서 위원장을 지정하세요."]);
     const chair = d.members.find(x=>x.chair);
-    if(chair && d.st.approver && chair.name.trim()!==d.st.approver) out.push(["info","위원장","명단의 위원장과 학교·결재 정보의 결재자명이 다릅니다. 둘 중 맞는 쪽으로 고치세요."]);
-    if(!d.st.staff) out.push(["warn","간사","학교·결재 정보의 담당자명(간사)을 입력하세요. 회의 개요와 회의록 기록자로 들어갑니다."]);
+    if(chair && d.st.approver && chair.name.trim()!==d.st.approver) out.push(["info","위원장","명단의 위원장과 우리 학교 정보의 결재자명이 다릅니다. 둘 중 맞는 쪽으로 고치세요."]);
+    if(!d.st.staff) out.push(["warn","간사","우리 학교 정보의 담당자명(간사)을 입력하세요. 회의 개요와 회의록 기록자로 들어갑니다."]);
     if(!d.minAgendas.length) out.push(["warn","안건 없음","의사일정에 올릴 안건을 체크하세요."]);
     if(d.minAgendas.some(a=>!a.proposer)) out.push(["warn","제안자","제안자가 비어 있는 안건이 있습니다. 안건대장 제안자 열을 채우거나 회의 개요에서 직접 보완하세요."]);
     const reg = d.minAgendas.filter(a=>a.kind==="규정개정").length;
@@ -6098,6 +6250,7 @@ function init(){
   $("nav").addEventListener("click", e=>{ const b = e.target.closest(".ni"); if(b) go(b.dataset.view); });
   document.querySelectorAll("[data-goview]").forEach(b=>b.addEventListener("click", ()=>go(b.dataset.goview)));
   $("stepDone").addEventListener("change", ()=>{ if(S.mt){ S.mt.done[S.step] = $("stepDone").checked; saveMeetState(); renderTop(); } });
+  $("typeBtn").addEventListener("click", changeMeetingType);
   $("tbBtn").addEventListener("click", ()=>{ TB.cur = null; if(S.view==="tools" && !TB.cur) go(S.lastView || "start"); else { if(S.view!=="tools") S.lastView = S.view; go("tools"); } try{ history.replaceState(null, "", "#도구함"); }catch(e){} });
   $("qaBtn").addEventListener("click", ()=>{ if(S.view==="qa") go(S.lastView || "start"); else { S.lastView = S.view; go("qa"); } });
   $("ckBtn").addEventListener("click", ()=>{ const c = $("ckCard"); if(c && !c.closest(".view").hidden) c.scrollIntoView({behavior:"smooth", block:"start"}); else toast("점검은 문서 화면에서 보입니다"); });
