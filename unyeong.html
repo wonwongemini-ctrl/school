@@ -1033,8 +1033,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* ===== 버전 정보 =====
    규칙: 고친 오류만 있으면 1.0.x, 기능이 늘면 1.x.0, 대장 양식이나 저장 방식이 바뀌어 예전 것과 맞지 않으면 x.0.0
    새 버전을 낼 때 APP.version, APP.date, CHANGELOG 맨 앞 항목을 함께 고친다. */
-const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.6.0", date:"2026-11-11"};
+const APP = {name:"학교운영위원회 운영업무 도우미", version:"2.6.1", date:"2026-11-11"};
 const CHANGELOG = [
+  {v:"2.6.1", date:"2026-11-11", items:[
+    "안건명에 '긴급'이 들어 있으면(예: 긴급돌봄) 회의 종류를 긴급 임시회로 짐작해 기안문에 '임시회(긴급)'으로 나오던 문제를 고침. 회의 종류는 맨 위 정기회·임시회·긴급 임시회 단추로 정함"
+  ]},
   {v:"2.6.0", date:"2026-11-11", items:[
     "도구함: 회의 차수·안건 접수 없이 필요한 문서 하나만 바로 만들기(회의록, 위원장 시나리오, 개최 공고문, 안건 표지·목록, 명패, 출석 등록부, 회의 안내, 인덱스, 봉투 라벨, 한글 파일 합치기, 공고일·정족수 계산). 첫 화면에 두 갈래, 맨 위 [도구함] 단추, 주소 #도구함/명패로 바로 열기",
     "긴급 예정: 위원장과 미리 긴급으로 협의한 안건을 자료 제출 예정일·사유와 함께 표시. 공고·공문·시나리오에 [긴급]으로 들어가고, 자료가 들어오면 긴급 안건집으로 따로 묶음. 대장 접수일은 자료를 받은 날",
@@ -2103,7 +2106,9 @@ function renderAttendance(){
 }
 /* ---------- 회의 선택 ---------- */
 function guessType(m){
-  if(m.items.some(a => /긴급/.test(a.name))) return "긴급임시회";
+  // 회의 종류를 고르지 않았을 때의 짐작. 안건명에 '긴급'이 들어 있다고 긴급 임시회로 보지 않는다(예: 긴급돌봄 운영 계획 — v2.6.1).
+  // 안건대장에서 불러온 회의만, 안건명에 [긴급]·(긴급) 표시가 있으면 긴급 임시회로 짐작한다. 안건접수로 만든 회의는 위 회의 종류 단추로 정한다.
+  if(m.src!=="intake" && m.items.some(a => /[\[(（]\s*긴급\s*[\])）]/.test(a.name))) return "긴급임시회";
   return m.hoe===1 ? "정기회" : "임시회";
 }
 function selectMeeting(key){
@@ -2188,7 +2193,8 @@ function applyMode(fromMeeting){
     fillNumberChoices();
     if(fromMeeting){
       const selTitle = sel => { const o = sel.options[sel.selectedIndex]; return o ? o.text : ""; };
-      if(mode==="open" && /긴급/.test(selTitle($("n_docSel")) + selTitle($("n_noticeSel")))) document.querySelector('input[name=mtype][value="긴급임시회"]').checked = true;
+      // 대장에 이 회의의 '긴급 임시회' 문서가 이미 있으면 긴급 임시회로 짐작. 회의 종류를 직접 고른 회의는 건드리지 않는다(v2.6.1)
+      if(mode==="open" && !(S.mt && S.mt.f.mtype) && /긴급\s*임시회/.test(selTitle($("n_docSel")) + selTitle($("n_noticeSel")))) document.querySelector('input[name=mtype][value="긴급임시회"]').checked = true;
     }
     S.attachEdited = false; fillAttachDefault();
   }
