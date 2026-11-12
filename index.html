@@ -439,7 +439,7 @@ dialog.qdlg{width:min(640px,calc(100vw - 24px))}
 </div>
 
 <footer>
-  <p>교무실 업무 도우미 v2.4 · 2026-11-04 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
+  <p>교무실 업무 도우미 v2.5 · 2026-11-12 · 입력한 내용은 어디로도 보내지 않고 이 브라우저에만 저장해요 (나이스 학사일정을 켜면 학교 코드·인증키만 나이스에 보내 일정을 받아요)</p>
   <p>만든 사람: <a href="https://blog.naver.com/oderobong" target="_blank" rel="noopener">blog.naver.com/oderobong</a> · 오류 제보·의견은 블로그 댓글로 · 공개 소프트웨어: SheetJS(Apache-2.0), JSZip(MIT) — 엑셀·zip을 열 때만 cdnjs에서 불러와요</p>
 </footer>
 </div>
@@ -555,9 +555,7 @@ var BUILTIN=[
  {id:'unyeong',spine:'학운위 운영',name:'학운위 운영업무 도우미',desc:'연중 · 회의 공문·공고, 명패·안건 인덱스·라벨, 기한 점검',tag:'학운위',url:B+'unyeong.html',helps:[['사용설명서','https://volcano-saturday-a54.notion.site/v2-0-3f99700e048c81f8968edd67b99a79fc'],['블로그 소개','https://blog.naver.com/oderobong/224428377136']]},
  {id:'hwp2hwpx',spine:'한글 변환',name:'HWP·HTML → HWPX 변환',desc:'옛 한글 파일·AI가 쓴 글을 한글 새 형식으로, 폴더째 한 번에',tag:'업무도구',url:A+'hwp2hwpx.html'},
  {id:'hwpxmerge',spine:'한글 합치기',name:'한글 파일 합치기',desc:'여러 한글 파일을 하나로 · 표지·목차·쪽 번호',tag:'업무도구',url:A+'hwpx-merge.html'},
- {id:'nameplate',spine:'명패 만들기',name:'명패 만들기',desc:'이름 붙여 넣으면 접는 명패를 A4로',tag:'업무도구',url:A+'nameplate.html'},
- {id:'labels',spine:'라벨·견출지',name:'라벨·견출지 인쇄',desc:'엑셀 명단으로 라벨지·서류철 견출지 찍기',tag:'업무도구',url:A+'labels.html'},
- {id:'signsheet',spine:'서명부',name:'참석자 서명부',desc:'명단을 붙여 넣으면 서명 칸 있는 한글 파일로',tag:'업무도구',url:A+'sign-sheet.html'},
+ {id:'print',spine:'출력 도우미',name:'출력 도우미',desc:'명단 한 번으로 명패·라벨·견출지·등록부 · 인쇄·한글 파일',tag:'업무도구',url:A+'print-helper.html'},
  {id:'textbox',spine:'글상자 묶기',name:'그림 글상자 묶기',desc:'체계도 그림 위에 글상자를 얹어 hwpx로',tag:'업무도구',url:A+'hwpx-picture-textbox.html'},
  {id:'staffpay',spine:'연차보상비',name:'공무직 급여 도우미',desc:'통상시급 검산 · 연가보상비 계산 · 급여·수당 궁금한 것 찾아보기',tag:'기타',url:A+'staff-pay.html'}
 ];
@@ -673,7 +671,8 @@ function renderCustomList(){
  });
 }
 function renderLegend(){var lg=$('legend');lg.textContent='';CATS.forEach(function(c){lg.appendChild(el('span',null,[el('span',{class:'chip',style:'background:'+c[1]}),c[0]]));});}
-function renderAll(){renderShelf();renderDesk();renderTiles();renderCustomList();renderTodo();renderExtSearch();renderBadge();}
+function renderAll(){S.mine=S.mine.map(function(id){return /^(nameplate|labels|signsheet)$/.test(id)?'print':id;}).filter(function(id,i,a){return a.indexOf(id)===i&&!!byId(id);}); // v2.5: 명패·라벨·서명부 → 출력 도우미 하나로
+ renderShelf();renderDesk();renderTiles();renderCustomList();renderTodo();renderExtSearch();renderBadge();}
 
 function take(id){
  var t=byId(id);if(!t)return;
